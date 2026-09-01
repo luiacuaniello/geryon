@@ -1,0 +1,33 @@
+name: A published number looks wrong
+description: Challenge a result in results/ or a claim in the README
+labels: ["measurement"]
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        These are welcome and taken seriously. Every recorded run carries its
+        provenance so that this kind of challenge can be settled rather than
+        argued.
+  - type: input
+    id: number
+    attributes:
+      label: Which number
+      description: The value, and where it appears.
+      placeholder: "9.0% within-policy, README line 12"
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What you think is wrong with it
+      description: >-
+        A different denominator, a comparison across incomparable runs, a
+        derivation that does not reproduce — whatever it is, be specific.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: What you ran or read to conclude that
+    validations:
+      required: false

@@ -1,0 +1,13 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Reporting a weakness in a defence
+    url: https://github.com/luiacuaniello/geryon/blob/main/DISCLOSURE.md
+    about: >-
+      Do not open a public issue. Measurements showing that a defence fails go
+      to its maintainers privately first, under the coordinated process in
+      DISCLOSURE.md.
+  - name: How the measurements are defined
+    url: https://github.com/luiacuaniello/geryon/blob/main/docs/related-work.md
+    about: >-
+      What each published number does and does not claim, and how it relates to
+      the existing evaluations, before you open an issue about it.

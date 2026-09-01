@@ -1,0 +1,50 @@
+name: Attack case for the corpus
+description: Propose a within-policy attack the corpus does not cover
+labels: ["corpus"]
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        A case belongs here if the injection reaches the attacker's goal using
+        only tools the user's own task already needed. If it needs a tool the
+        user task never uses, a tool-identity policy blocks it for free and it
+        is out of scope for this corpus.
+  - type: textarea
+    id: user-task
+    attributes:
+      label: The user task
+      description: What the agent was legitimately asked to do, and with which tools.
+    validations:
+      required: true
+  - type: textarea
+    id: injection
+    attributes:
+      label: The injected goal
+      description: >-
+        What the attacker achieves, and why it needs no tool beyond the ones
+        above.
+    validations:
+      required: true
+  - type: dropdown
+    id: family
+    attributes:
+      label: Family
+      description: From protocol/attack-taxonomy.md. Choose "new" and argue for it if none fit.
+      options:
+        - F1 Argument substitution
+        - F2 Goal reordering
+        - F3 Endorsement targeting
+        - F4 Policy widening
+        - F5 Provenance laundering
+        - new family
+    validations:
+      required: true
+  - type: textarea
+    id: distinguisher
+    attributes:
+      label: What would have to be checked to catch it
+      description: >-
+        Which argument, and against what. This is the part that makes the case
+        useful rather than just another example.
+    validations:
+      required: true
