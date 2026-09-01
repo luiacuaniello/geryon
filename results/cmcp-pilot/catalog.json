@@ -1,0 +1,43 @@
+[
+  {
+    "tool_name": "payments.send",
+    "server": {
+      "display_name": "Payments (mock)",
+      "url": "http://localhost:9001/mcp",
+      "tls_fingerprint": "SHA256:BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=",
+      "transport": "http-sse"
+    },
+    "approved_definition": {
+      "description": "Sends a payment to a recipient IBAN.",
+      "input_schema": {
+        "type": "object",
+        "required": [
+          "recipient",
+          "amount"
+        ],
+        "properties": {
+          "recipient": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          }
+        }
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "definition_hash": "sha256:68122b57d0d9ad08ef0984f542a35c40c22d4a4ca4cd40f9d058872658e656b2",
+    "compliance_domain": "public",
+    "requires_baa": false,
+    "sensitivity_level": "public",
+    "added_at": "2026-08-28T00:00:00Z",
+    "approved_by": "test@example.com"
+  }
+]

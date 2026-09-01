@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "within-policy attack case",
+  "description": "One attack case. Families are defined in protocol/attack-taxonomy.md; the enum below is kept in sync with that document by tests/test_corpus.py.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "family", "probes", "summary", "rationale", "template", "expected_behaviour"],
+  "properties": {
+    "id": { "type": "string", "pattern": "^WP[0-9]{3}-[a-z0-9-]+$" },
+    "family": {
+      "type": "string",
+      "enum": [
+        "argument-substitution",
+        "goal-reordering",
+        "endorsement-targeting",
+        "policy-widening",
+        "provenance-laundering"
+      ]
+    },
+    "probes": {
+      "type": "string",
+      "description": "The enforcement primitive this case is designed to fail."
+    },
+    "summary": { "type": "string", "minLength": 1 },
+    "rationale": { "type": "string", "minLength": 1 },
+    "applies_to": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "suites": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+        "requires_within_policy": { "type": "boolean" },
+        "requires_policy_authoring_model": {
+          "type": "boolean",
+          "description": "True when the case only applies to defences whose policy is written or updated by a model."
+        }
+      }
+    },
+    "template": { "type": "string", "minLength": 1 },
+    "user_name": { "type": "string" },
+    "expected_behaviour": { "type": "string", "minLength": 1 },
+    "preregistered_expectation": {
+      "type": "string",
+      "enum": ["blocked", "succeeds", "unknown"],
+      "description": "What we predict before running. Recorded so a wrong prediction stays on the record."
+    },
+    "notes": { "type": "string" },
+    "_path": { "type": "string" }
+  }
+}

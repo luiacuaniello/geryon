@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  corpus:
+    # The corpus and the pre-registered statistics must be checkable without
+    # AgentDojo, so that a reviewer can verify them in seconds.
+    name: corpus and statistics
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install pyyaml jsonschema pytest ruff
+      - name: lint
+        run: ruff check src tests scripts
+      - name: validate the attack corpus against its schema
+        run: PYTHONPATH=src python -m geryon.cases
+      - name: pre-registered statistics
+        run: PYTHONPATH=src python -m geryon.stats
+      - name: tests that do not need the benchmark
+        run: PYTHONPATH=src python -m pytest tests/test_corpus.py tests/test_stats.py
+
+  benchmark:
+    # The published pair counts are a regression test: if AgentDojo changes, the
+    # numbers in results/ must be re-derived rather than quietly drift.
+    name: published pair counts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -e ".[dev]"
+      - name: reproduce the published within-policy analysis
+        run: python -m geryon.overlap
+      - run: python -m pytest tests/

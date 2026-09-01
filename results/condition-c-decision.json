@@ -1,0 +1,9 @@
+{
+  "b_open_weight_policy": 0.42857142857142855,
+  "b_claude_policy": 0.4523809523809524,
+  "retention_rule": 0.75,
+  "chosen_policy_model": "openai.gpt-oss-120b",
+  "optimiser_budget": 10,
+  "protocol_deviation": null,
+  "projected_usd": 4.82
+}
