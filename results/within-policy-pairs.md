@@ -1,6 +1,6 @@
 # Preliminary finding: how much of AgentDojo is within policy
 
-Generated with `python -m withinpolicy.overlap` on AgentDojo benchmark version
+Generated with `python -m geryon.overlap` on AgentDojo benchmark version
 v1.2.1 (package `agentdojo` 0.1.35). Reproducible in under a minute on any
 machine; the counts below are asserted in `tests/test_overlap.py` so they cannot
 drift silently.

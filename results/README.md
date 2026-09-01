@@ -88,4 +88,4 @@ is arithmetic, not judgement: with a two-sided exact McNemar test at alpha 0.05,
 five pairs flipping in one direction gives p = 0.0625. It is fixed here, before
 any experiment, so that it cannot be relaxed once the numbers exist.
 
-Run `python -m withinpolicy.stats` to print the thresholds for each pair set.
+Run `python -m geryon.stats` to print the thresholds for each pair set.
