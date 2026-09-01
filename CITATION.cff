@@ -1,0 +1,29 @@
+cff-version: 1.2.0
+title: "Geryon: measuring prompt-injection defences against within-policy attacks"
+message: >-
+  If you use this instrument, the attack corpus, or the pair counts it derives,
+  please cite it. Cite the upstream work it measures separately: AgentDojo for
+  the benchmark, and Progent for the defence.
+type: software
+authors:
+  - given-names: Luigi
+    family-names: Iacuaniello
+    email: luigi@a3thinker.it
+repository-code: "https://github.com/luiacuaniello/geryon"
+abstract: >-
+  An instrument for measuring action-level prompt-injection defences on the
+  subset of attacks that reach the attacker's goal using only actions the agent
+  was already authorised to take. Such attacks are 9% of AgentDojo; a
+  tool-identity policy cannot see them, and no published evaluation reports a
+  separate number on them. Includes a pre-registered protocol, a within-policy
+  attack corpus, a seeded adaptive attacker, and pilot measurements of Progent
+  and of one deployed MCP gateway.
+keywords:
+  - prompt-injection
+  - llm-security
+  - ai-agents
+  - security-evaluation
+  - model-context-protocol
+license: Apache-2.0
+version: 0.1.0
+date-released: "2026-09-01"
