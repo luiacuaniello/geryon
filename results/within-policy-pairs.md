@@ -16,6 +16,14 @@ from the user's request authorises every tool the attack needs, so the defence
 cannot block it by tool identity and must discriminate on arguments, provenance,
 or data flow.
 
+**What the tool sets are read from.** Both sets come from each task's
+`ground_truth`, the reference solution the benchmark itself ships. That is the only
+authoritative statement of what a task requires, but it is *one* solution rather
+than the only one. A pair counted as within policy is therefore certain — that
+route exists and the benchmark wrote it. A pair counted as outside may still be
+reachable by an alternative route that stays inside the authorised set, which this
+method does not look for. **The 85 are a lower bound, never an over-count.**
+
 **Argument level.** The pair is within policy at the argument level when, in
 addition, the injection introduces no argument value that the user task does not
 already supply. Such a pair could not be blocked even by a policy that pins every
