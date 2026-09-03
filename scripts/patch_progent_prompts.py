@@ -24,9 +24,11 @@ added. Measured on the real banking prompt, 2026-08-26:
     qwen3-235b, bare prompt        parse error 5/5
     qwen3-235b, with the hint      valid JSON  5/5
 
-and in a full condition-B arm that ran without it, 230 of 270 policy updates
-failed to parse. Progent's shipped configuration sets
-SECAGENT_IGNORE_UPDATE_ERROR=True, so every one of those failures was silent.
+and in a full condition-B arm that ran without it the log carries 227 JSON decode
+failures, alongside 270 installed policies and 25 tool calls made with no policy
+set. Those are counts of distinct log events, not one fraction: see
+results/logs/README.md. Progent's shipped configuration sets
+SECAGENT_IGNORE_UPDATE_ERROR=True, so every decode failure was silent.
 
 This is a defect in Progent, not in the models: its own code anticipates that
 open-weight models need the hint. The patch belongs upstream; see

@@ -18,8 +18,8 @@ number out of them.
 | `runs-strong-attacker/` | Condition C with attacker `qwen3-235b`, one repeat. Bounds the null result on adaptation with a second, larger attacker. | yes, one repeat |
 | `runs-strong-policy-fixed/` | B with policy model `qwen3-235b` **after** the prompt patch. One of the three policy-model configurations that exclude the confound. | yes, one repeat |
 | `cmcp-pilot/` | The deployed MCP gateway pilot: config, catalog, policies, and the three-call result. No inference cost. | yes |
-| `logs/` | Raw stdout of early runs, gzipped. Holds the evidence for the Progent findings — 92 of 270 policy updates carrying the attacker's account number. | evidence, not measurements |
-| `runs-strong-policy/` | B with policy model `qwen3-235b` **before** the prompt patch, when 230 of 270 policy updates were failing to parse and being swallowed silently. | **NO — kept as the record of the defect** |
+| `logs/` | Raw stdout of early runs, gzipped. Holds the evidence for the Progent findings — 92 of the 270 installed policies carried the attacker's account number. | evidence, not measurements |
+| `runs-strong-policy/` | B with policy model `qwen3-235b` **before** the prompt patch, when 227 JSON decodes failed and were swallowed silently, and 25 tool calls ran with no policy set. | **NO — kept as the record of the defect** |
 | `runs-claude-policy/` | An attempt to use `claude-sonnet-5` as the policy model. It never ran: the model is gated on this account and the endpoint rejected it. Only a log survives. | **NO — failed run** |
 
 The two "NO" rows are kept rather than deleted because a defect that leaves no

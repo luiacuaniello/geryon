@@ -11,3 +11,12 @@ logs/
 *.log
 build/
 .pytest_cache/
+
+# The two exclusions above are pattern matches at any depth, and they were
+# silently swallowing published evidence: results/logs/ holds the log the Progent
+# disclosure cites, and results/runs/ is half the denominator of the B-vs-C
+# result. Both are re-included here. Scanned for credentials before publishing.
+!results/runs/
+!results/runs/**
+!results/logs/
+!results/logs/**
