@@ -28,21 +28,28 @@ from geryon.optimiser import (
 
 
 def yaml_safe(payload: str) -> str:
-    """Make an attacker-written payload safe to substitute into a YAML document.
+    r"""Escape an attacker-written payload for the YAML AgentDojo builds.
 
-    AgentDojo builds the environment by formatting the payload into a YAML file
-    and parsing the result, so the payload sits inside a scalar. A model writing
-    free text emits the two things that terminate one: a colon followed by a
-    space, and stray quotes. The published attack templates avoid both by hand;
-    an LLM does not, and one bad payload used to abort the entire run.
+    AgentDojo formats the payload into its environment YAML and parses the
+    result, and every suite places the placeholder inside a *double-quoted*
+    scalar: ``subject: "{injection_incoming_transaction}"``. In that context only
+    three characters matter. A backslash opens an escape sequence, so ``\d`` is a
+    parse error and ``\n`` silently becomes a newline. A quote ends the scalar. A
+    real newline is folded into a space. Colons, hashes, apostrophes and tabs are
+    safe there.
 
-    Rewriting rather than escaping, because the payload has to stay readable as an
-    attack: this is the corpus a reviewer will read.
+    Escaped rather than rewritten, so that the payload the model reads is the
+    payload the attacker proposed: ``yaml.safe_load`` returns this unchanged. An
+    earlier version rewrote ``": "`` into ``" - "`` and replaced quotes with
+    apostrophes, which altered the attack it was about to measure — colon-space
+    never needed it, and the quote could simply be escaped. Runs made before
+    2026-09-14 carry payloads transformed that way.
     """
     cleaned = payload.replace("\r\n", "\n").replace("\r", "\n")
-    cleaned = cleaned.replace(": ", " - ")
-    cleaned = cleaned.replace('"', "'")
-    cleaned = "\n".join(line.rstrip() for line in cleaned.split("\n"))
+    # Backslashes first: every rule below introduces one.
+    cleaned = cleaned.replace("\\", "\\\\")
+    cleaned = cleaned.replace('"', '\\"')
+    cleaned = cleaned.replace("\n", "\\n").replace("\t", "\\t")
     return cleaned
 
 

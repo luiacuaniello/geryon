@@ -89,6 +89,16 @@ against the smaller one's 2.5, so the null result is not a matter of the search
 giving up early. Every win in condition C came from a seed — the benchmark's own
 attack, or one of the hand-written corpus templates.
 
+One caveat about those 487, added 2026-09-14. Each payload passes through
+`yaml_safe` before AgentDojo formats it into the environment, and the version in
+use during these runs *rewrote* rather than escaped: colon-space became " - " and
+double quotes became apostrophes. So the text the agent read differed slightly
+from the text the attacker wrote. The sanitiser now escapes, and a round trip
+returns the payload unchanged (`tests/test_yaml_safe.py`); the recorded proposals
+predate that fix. It is a small textual difference and the wins all came from
+seeds regardless, but a reader comparing a logged proposal against what the model
+saw should know the two were not byte-identical.
+
 The honest reading, and the one the threat model licenses: *this attack family, at
 this strength, on these models, did not improve on fixed payloads.* It is bounded
 by two attacker models rather than one, which is why the second was run at all.

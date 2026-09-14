@@ -24,6 +24,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import subprocess
 import sys
 from contextlib import ExitStack
@@ -110,15 +111,52 @@ def _pipeline_of(attack):
     return attack.target_pipeline
 
 
-def git_commit(path: Path) -> str | None:
+#: A full git object name, and nothing that merely looks like one.
+_SHA1 = re.compile(r"^[0-9a-f]{40}$")
+
+
+def _git(path: Path, *args: str) -> str | None:
+    """One read-only git command, or None when it does not answer cleanly.
+
+    The return code has to be checked, not just the output. `git rev-parse HEAD`
+    in a repository with no commits yet exits 128 *and still prints the literal
+    string "HEAD" on stdout*, so a function that trusts stdout alone records
+    "HEAD" as though it were a commit. The first campaign did exactly that: 36
+    provenance files claim a commit that identifies nothing.
+    """
     try:
         out = subprocess.run(
-            ["git", "-C", str(path), "rev-parse", "HEAD"],
+            ["git", "-C", str(path), *args],
             capture_output=True, text=True, timeout=10, check=False,
         )
-        return out.stdout.strip() or None
     except Exception:
         return None
+    return out.stdout.strip() if out.returncode == 0 else None
+
+
+def git_commit(path: Path) -> str | None:
+    """The commit a directory is on, or None when that is not a fact."""
+    sha = _git(path, "rev-parse", "HEAD")
+    return sha if sha and _SHA1.match(sha) else None
+
+
+def git_dirty(path: Path) -> bool | None:
+    """Whether the working tree carries changes the commit does not describe.
+
+    A hash beside a dirty tree names the wrong code, so the two travel together.
+    """
+    status = _git(path, "status", "--porcelain")
+    return None if status is None else bool(status)
+
+
+def git_root(path: Path) -> str | None:
+    """The repository a path actually belongs to.
+
+    Asked of git rather than guessed by counting parent directories: the guess
+    lands somewhere arbitrary for a pip-installed package and silently records
+    an unrelated repository's commit.
+    """
+    return _git(path, "rev-parse", "--show-toplevel")
 
 
 def load_pairs(pairs_path: Path, suite: str, within_policy_only: bool = True) -> list[tuple[str, str]]:
@@ -373,8 +411,11 @@ def _run(args, log_path) -> int:
         "secagent_env": secagent_env if args.condition != "A" else {},
         "defence_active": wrapped,
         "agentdojo_path": str(Path(agentdojo.__file__).resolve().parent),
-        "agentdojo_commit": git_commit(Path(agentdojo.__file__).resolve().parents[3]),
+        "benchmark_repo": git_root(Path(agentdojo.__file__).resolve().parent),
+        "benchmark_repo_commit": git_commit(Path(agentdojo.__file__).resolve().parent),
+        "benchmark_repo_dirty": git_dirty(Path(agentdojo.__file__).resolve().parent),
         "geryon_commit": git_commit(repo),
+        "geryon_dirty": git_dirty(repo),
         "pair_count": len(pairs),
         "calibration_only": bool(args.limit_user_tasks),
         "within_policy_only": not args.all_pairs,

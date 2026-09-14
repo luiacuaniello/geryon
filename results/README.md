@@ -25,6 +25,32 @@ number out of them.
 The two "NO" rows are kept rather than deleted because a defect that leaves no
 trace is a defect that gets rediscovered. Their numbers must not be quoted.
 
+## A correction to the provenance, 2026-09-14
+
+Every run in this directory used to record `"geryon_commit": "HEAD"` (in the
+earlier files, `"withinpolicy_commit"`). That was never a commit. `git rev-parse
+HEAD` exits 128 in a repository with no commits yet **and still prints the
+literal string "HEAD" on stdout**, and the helper that recorded it checked the
+output without checking the return code.
+
+The runs are from 2026-08-25 to 2026-08-30; this repository's first commit is
+2026-09-01. So the code that produced them was never committed, and no hash
+identifies it. The field now says `null`, with a note in each file giving the
+reason — rather than being backfilled with a later commit that would describe
+different code.
+
+The neighbouring field was also mislabelled. `"agentdojo_commit"` was read from
+three directories above the installed package, which for Progent's vendored tree
+lands on the Progent repository root; the recorded hash exists in
+`sunblaze-ucb/progent` and not in `ethz-spylab/agentdojo`. It is now
+`"benchmark_repo"` plus `"benchmark_repo_commit"`, which is what the value always
+was.
+
+No measured value changed: the `security` and `utility` arrays hash identically
+before and after. `scripts/run_condition.py` now checks the return code, records
+whether each tree was dirty, and asks git for the repository root instead of
+counting parent directories; `tests/test_provenance.py` covers all of it.
+
 ## Which numbers the proposal uses
 
 - the decomposition, 84% against 57%: `runs-full-set/`, all three suites, three
