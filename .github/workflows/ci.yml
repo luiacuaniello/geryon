@@ -38,4 +38,6 @@ jobs:
       - run: pip install -e ".[dev]"
       - name: reproduce the published within-policy analysis
         run: python -m geryon.overlap
+      - name: reproduce the structural policy analysis the disclosure quotes
+        run: python -m geryon.policies results/logs/strong_arm_full.log.gz
       - run: python -m pytest tests/
