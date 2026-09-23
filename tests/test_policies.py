@@ -15,7 +15,6 @@ from geryon.policies import (
     PolicyUnreadable,
     analyse,
     authorises,
-    classify,
     permitted,
     read_policies,
 )
@@ -61,25 +60,6 @@ def test_authorises_lists_every_tool_that_would_send():
     assert authorises(policy, ATTACKER) == ["send_money"]
 
 
-def test_a_tool_appearing_for_the_first_time_is_an_expansion():
-    before = {"get_balance": clause()}
-    after = {"get_balance": clause(), "send_money": clause(recipient={"enum": [ATTACKER]})}
-    assert classify(before, after) == "expansion"
-
-
-def test_widening_an_enum_is_an_expansion():
-    before = {"send_money": clause(recipient={"enum": [VICTIM]})}
-    after = {"send_money": clause(recipient={"enum": [VICTIM, ATTACKER]})}
-    assert classify(before, after) == "expansion"
-
-
-def test_closing_an_open_argument_onto_the_attacker_is_a_narrowing():
-    """The case that matters: the permitted set shrinks, onto the attacker."""
-    before = {"send_money": clause(recipient={"type": "string"})}
-    after = {"send_money": clause(recipient={"enum": [ATTACKER]})}
-    assert classify(before, after) == "narrowing"
-
-
 def test_a_cleared_policy_is_read_as_unset(tmp_path: Path):
     log = tmp_path / "run.log"
     log.write_text("security policy updated: None\n")
@@ -110,4 +90,4 @@ def test_analyse_counts_a_small_run(tmp_path: Path):
     assert report.unset == 1
     assert report.authorising == 1
     assert report.exclusive == 1
-    assert report.transitions == {"narrowing": 1}
+    assert not hasattr(report, "transitions")

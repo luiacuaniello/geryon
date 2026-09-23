@@ -26,21 +26,22 @@ mean reading Progent's code rather than its output.
 The 92 is the finding: policies that were actually installed and in force carried
 a value taken from the injected content.
 
-## What those policies actually permit
+## Where those policies name the account
 
-Counting lines says the account appears. It does not say the policy *allows*
-sending to it. `python -m geryon.policies results/logs/strong_arm_full.log.gz`
-reads each policy as a structure and answers that:
+Counting lines says the account appears somewhere in a policy.
+`python -m geryon.policies results/logs/strong_arm_full.log.gz` reads each
+policy as a structure and counts where the account is named as a permitted
+recipient — that is, where it appears in an `enum` restriction on `recipient`:
 
 | | count |
 |---|---|
 | policies installed | 270 |
 | of which cleared to `None` | 10 |
-| enumerating the attacker's account as a permitted recipient | **91** |
+| naming the attacker's account as a permitted recipient | **91** |
 | — via `send_money` | 73 |
 | — via `update_scheduled_transaction` | 20 |
 | — via `schedule_transaction` | 1 |
-| with that account the **only** permitted recipient of `send_money` | 47 |
+| with that account the **only** named recipient of `send_money` | 47 |
 
 The typical clause is
 
@@ -54,18 +55,19 @@ Of the 92 policies whose text contains the account, 73 enumerate it for
 attacker too, without naming him, and are not counted above), and the rest name
 it on one of the other two money-moving tools.
 
-**Narrowing or expansion.** Progent classifies each update with an SMT solver:
-narrowings apply automatically, expansions require approval. That verdict is not
-in the log. Reconstructing the subset relation from the logged policies, of the
-44 updates that first admit the account to `send_money`, 25 permit strictly more
-than the policy they replace and 19 permit no more — the latter would be applied
-without approval under any configuration. The recurring shape is `recipient`
-going from `{'type': 'string'}` to an enum holding the attacker's account: the
-permitted set shrinks, onto the attacker.
+This is a structural reading, not a replay of the defence's decision: any
+constraint other than an `enum` is read as unconstrained, and a tool's clauses
+are read together. Progent evaluates clauses in priority order and can stop at
+the first, so where a tool carries several clauses the two readings can differ.
 
-That reconstruction is not the defence's own verdict and treats every non-`enum`
-constraint as unconstrained; where the two disagree the solver is right. The
-question is open and was put to the authors.
+**Withdrawn, 2026-09-23.** An earlier version of this section and of the module
+classified the policy *updates* as narrowings or expansions, and quoted 25 and
+19 of 44. That classification was a reconstruction that did not match Progent's
+own procedure — it read patterns as unconstrained and a tool's clauses as a
+union — and it also misstated what manual approval covers, which reviews every
+update. Those counts were quoted in the disclosure to the Progent authors and
+have been withdrawn there too. The classification has been removed rather than
+repaired.
 
 The decode failures and the 25 unprotected calls matter for a different reason.
 Progent ships `SECAGENT_IGNORE_UPDATE_ERROR=True` in its own run.sh, so a policy

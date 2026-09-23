@@ -2,8 +2,8 @@
 
 A rate says how often an attack succeeded. It does not say what the defence
 believed it was allowing at the time. This module reads the policies a run
-installed and answers a narrower question: *did the policy authorise the
-attacker's own destination, and how did that value get in?*
+installed and answers a narrower question: *does the policy name the
+attacker's own destination as a permitted recipient?*
 
 The input is the stdout of a Progent run, which logs one line per installed
 policy::
@@ -12,13 +12,15 @@ policy::
 
 Two limits are deliberate and must travel with any number this produces.
 
-**The subset relation here is a reconstruction, not the defence's own verdict.**
-Progent classifies each update with an SMT solver as a narrowing (applied
-automatically) or an expansion (requiring approval). That classification is not
-in the log. :func:`classify` compares the logged policies directly, and treats
-any constraint that is not an ``enum`` as unconstrained — so numeric bounds and
-patterns are read as permitting everything. Where the two disagree, the solver
-is right and this is wrong.
+**This is a structural reading, not a replay of the defence's decision.** A
+recipient counts as named when it appears in an ``enum`` restriction; any other
+constraint is read as unconstrained, and a tool's clauses are read together.
+Progent evaluates clauses in priority order and can stop at the first, so where
+a tool carries several clauses the two readings can differ.
+
+An earlier version also classified policy updates as narrowings or expansions.
+That reconstruction did not match the defence's own procedure, and the counts it
+produced were withdrawn on 2026-09-23. It has been removed rather than repaired.
 
 **A log line is not a pair.** Policy resets do not align with (user task,
 injection task) boundaries, so counts here are per installed policy, never per
@@ -61,7 +63,6 @@ class Report:
     authorising: int = 0
     by_tool: dict[str, int] = field(default_factory=dict)
     exclusive: int = 0
-    transitions: dict[str, int] = field(default_factory=dict)
 
 
 def read_policies(path: Path) -> Iterator[dict | None]:
@@ -101,7 +102,7 @@ def permitted(policy: dict, tool: str, argument: str = "recipient") -> frozenset
 
 
 def authorises(policy: dict, account: str, tools: Iterable[str] = MOVERS) -> list[str]:
-    """The tools this policy would let send to ``account``."""
+    """The tools whose recipient restriction names ``account`` in an ``enum``."""
     hits = []
     for tool in tools:
         allowed = permitted(policy, tool)
@@ -110,38 +111,12 @@ def authorises(policy: dict, account: str, tools: Iterable[str] = MOVERS) -> lis
     return hits
 
 
-def classify(before: dict, after: dict) -> str:
-    """Whether ``after`` permits no more than ``before``, over every tool.
-
-    See the module docstring: this is a reconstruction. A tool absent from
-    ``before`` and present in ``after`` is an expansion, because absence denies.
-    """
-    for tool, clauses in after.items():
-        was = permitted(before, tool)
-        if was is None:
-            return "expansion"
-        for clause in clauses:
-            args = clause[2] if len(clause) > 2 and isinstance(clause[2], dict) else {}
-            for argument in args:
-                now = permitted(after, tool, argument)
-                then = permitted(before, tool, argument)
-                if then == ANY:
-                    continue
-                if now == ANY or then is None:
-                    return "expansion"
-                if isinstance(now, frozenset) and isinstance(then, frozenset) and not now <= then:
-                    return "expansion"
-    return "narrowing"
-
-
 def analyse(path: Path, account: str = BANKING_ATTACKER_ACCOUNT) -> Report:
     report = Report()
-    previous: dict | None = None
     for policy in read_policies(path):
         report.installed += 1
         if policy is None:
             report.unset += 1
-            previous = None
             continue
         hits = authorises(policy, account)
         if hits:
@@ -150,14 +125,6 @@ def analyse(path: Path, account: str = BANKING_ATTACKER_ACCOUNT) -> Report:
                 report.by_tool[tool] = report.by_tool.get(tool, 0) + 1
             if permitted(policy, "send_money") == frozenset({account}):
                 report.exclusive += 1
-        if previous is not None:
-            introduced = "send_money" in hits and account not in (
-                permitted(previous, "send_money") or frozenset()
-            )
-            if introduced:
-                kind = classify(previous, policy)
-                report.transitions[kind] = report.transitions.get(kind, 0) + 1
-        previous = policy
     return report
 
 
@@ -170,15 +137,12 @@ def main(argv: list[str] | None = None) -> int:
     r = analyse(args.log, args.account)
     print(f"policies installed              {r.installed}")
     print(f"  of which cleared to None      {r.unset}")
-    print(f"authorising a transfer to       {args.account}")
+    print(f"naming as a permitted recipient {args.account}")
     print(f"  policies                      {r.authorising}")
     for tool, n in sorted(r.by_tool.items(), key=lambda kv: -kv[1]):
         print(f"    via {tool:32} {n}")
-    print(f"  with that account the only permitted recipient of send_money   {r.exclusive}")
-    print("updates that first admit it to send_money, classified over the whole policy:")
-    for kind, n in sorted(r.transitions.items(), key=lambda kv: -kv[1]):
-        print(f"  {kind:12} {n}")
-    print("  (reconstructed, not the defence's own SMT verdict — see the module docstring)")
+    print(f"  with that account the only named recipient of send_money   {r.exclusive}")
+    print("  (a structural reading of the policies — see the module docstring)")
     return 0
 
 
