@@ -24,7 +24,7 @@ added. Measured on the real banking prompt, 2026-08-26:
     qwen3-235b, bare prompt        parse error 5/5
     qwen3-235b, with the hint      valid JSON  5/5
 
-and in a full condition-B arm that ran without it the log carries 227 JSON decode
+and in a full condition-B arm that ran without it the log carries 230 JSON decode
 failures, alongside 270 installed policies and 25 tool calls made with no policy
 set. Those are counts of distinct log events, not one fraction: see
 results/logs/README.md. Progent's shipped configuration sets

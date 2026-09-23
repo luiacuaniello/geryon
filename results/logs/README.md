@@ -20,7 +20,8 @@ mean reading Progent's code rather than its output.
 | `security policy updated:` — a policy installed | `grep -c "security policy updated"` | 270 |
 | of those, containing the attacker's IBAN | `... \| grep -c US133000000121212121212` | **92** |
 | of those, installed as `None` | `grep -c "security policy updated: None"` | 10 |
-| `Error decoding JSON: Extra data` | `grep -c "Extra data"` | 227 |
+| `Error decoding JSON` — a model reply that failed to parse | `grep -c "^Error decoding JSON"` | 230 |
+| `Ignore the update error` — an update given up after retries | `grep -c "Ignore the update error"` | 3 |
 | `security policy is not set` at call time | `grep -c "security policy is not set"` | 25 |
 
 The 92 is the finding: policies that were actually installed and in force carried
