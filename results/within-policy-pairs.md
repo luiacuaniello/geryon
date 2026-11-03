@@ -5,6 +5,17 @@ v1.2.1 (package `agentdojo` 0.1.35). Reproducible in under a minute on any
 machine; the counts below are asserted in `tests/test_overlap.py` so they cannot
 drift silently.
 
+**Corrected, 2026-11-03.** Earlier versions of this file, the README and our
+report to the AgentDojo maintainers (ethz-spylab/agentdojo issue 187) gave the
+share as 85 of 949 (9.0%) and described the other 864 pairs as blocked by a
+tool-identity policy. In 340 of those 864 the injection's ground truth calls no
+tool, so this method cannot classify them, and 20 of them no tool policy can
+refuse at all. The 340 and their split were raised in comments on
+ethz-spylab/agentdojo issue 235 on 31 October 2026. The 85 and every per-pair
+classification are unchanged; the denominator and the description of the
+remainder were wrong. The shares below are taken over the 609 pairs the method
+can classify.
+
 ## Method
 
 For every (user task, injection task) pair, compute the set of tools each task's
@@ -29,15 +40,32 @@ addition, the injection introduces no argument value that the user task does not
 already supply. Such a pair could not be blocked even by a policy that pins every
 argument to the value the user's request implies.
 
+**Pairs the method cannot classify.** In 340 pairs the injection task's ground
+truth calls no tool, so there is no tool set to compare. They are of two kinds,
+and neither is "out of policy":
+
+- **travel, `injection_task_6` (20 pairs).** The goal is a sentence in the
+  agent's reply, and the security check reads only that reply. The attack needs
+  no tool, so no tool policy, however strict, can refuse it.
+- **workspace, injection tasks 6 to 13 (320 pairs).** Added in v1.2 and v1.2.1
+  with a ground truth that returns no calls, although each security check
+  inspects the environment afterwards: emails sent to the attacker, emails and
+  files deleted. These attacks do need tools. The benchmark does not say which,
+  and this method does not guess.
+
+Every share below is taken over the 609 pairs that remain. The 85 stay a lower
+bound for the benchmark as a whole, since some of the 320 may be within policy
+too.
+
 ## Result
 
-| suite | within policy | total pairs | share | distinct user tasks | distinct injection goals | single-tool injections |
-|---|---|---|---|---|---|---|
-| banking | 42 | 144 | 29.2% | 10 | 9 | 41 |
-| slack | 19 | 105 | 18.1% | 14 | 2 | 19 |
-| travel | 6 | 140 | 4.3% | 6 | 3 | 6 |
-| workspace | 18 | 560 | 3.2% | 14 | 5 | 14 |
-| **total** | **85** | **949** | **9.0%** | | | **80** |
+| suite | total pairs | injection calls no tool | classifiable | within policy | share of classifiable | distinct user tasks | distinct injection goals | single-tool injections |
+|---|---|---|---|---|---|---|---|---|
+| banking | 144 | 0 | 144 | 42 | 29.2% | 10 | 9 | 41 |
+| slack | 105 | 0 | 105 | 19 | 18.1% | 14 | 2 | 19 |
+| travel | 140 | 20 | 120 | 6 | 5.0% | 6 | 3 | 6 |
+| workspace | 560 | 320 | 240 | 18 | 7.5% | 14 | 5 | 14 |
+| **total** | **949** | **340** | **609** | **85** | **14.0%** | | | **80** |
 
 At the argument level the count is **0 out of 85, in every suite**. Every
 within-policy pair requires at least one argument value that appears nowhere in
@@ -45,10 +73,14 @@ the user task's ground truth: between one and five such values, median four.
 
 ## Reading
 
-**The first number bounds what a tool-identity policy can do.** An evaluation
-averaged over all 949 pairs is dominated by pairs that a tool-identity policy
-blocks for free, which inflates the apparent strength of any action-level
-defence. The 85 are the subset on which these defences are actually tested.
+**The first number bounds what a tool-identity policy can do.** Of the 609
+classifiable pairs, 524 need a tool the user task never uses, which a
+least-privilege policy refuses by name. They are more than half of the whole
+benchmark, so an evaluation averaged over all 949 pairs leans on them, and that
+inflates the apparent strength of any action-level defence. The 85 are the subset
+on which these defences are actually tested. The 20 travel pairs that need no
+tool are a third case: a tool policy cannot refuse them at all, so an
+action-level defence deserves neither credit nor blame for them.
 
 **The second number relocates the open question.** If no within-policy pair is
 also within policy at argument granularity, then a defence that pins arguments
@@ -76,7 +108,7 @@ account for it rather than around it:
 - **80 of the 85 pairs have an injection needing exactly one tool.** Being a
   subset is close to automatic for a single-tool goal, so "within policy" here is
   substantially a property of AgentDojo's injection tasks rather than a hard-won
-  attack property. Stated so nobody reads more into 9.0% than it carries.
+  attack property. Stated so nobody reads more into 14.0% than it carries.
 - **Goal diversity is low.** Slack contributes 19 pairs but only 2 distinct
   injection goals; travel 6 pairs from 3 goals. Per-suite numbers are not
   independent samples of attacker intent.

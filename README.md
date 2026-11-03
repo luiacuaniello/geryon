@@ -10,8 +10,8 @@ Geryon wears the face of a just man. So does an attack that reaches the
 attacker's goal using only actions the agent was already authorised to take: it
 asks for no new tool, so a least-privilege policy sees nothing out of place.
 
-Those attacks are **9% of the standard benchmark**, and nobody reports a number
-on them. This is the instrument that does.
+Those attacks are **at least 14% of the standard benchmark's classifiable
+pairs**, and nobody reports a number on them. This is the instrument that does.
 
 ## The question
 
@@ -27,9 +27,10 @@ defence-aware attackers (arXiv:2510.09023).
 Two adaptive evaluations of the action-level class now exist — AutoDojo
 (arXiv:2606.15057) and LaunchSafe (arXiv:2606.26479) — and in both, the
 action-level defences held. **This project does not claim they are broken.**
-It claims something narrower and checkable: both measured over a pair set
-dominated by attacks that a tool-identity policy blocks for free, and neither
-attacked the components on which argument-level enforcement actually rests.
+It claims something narrower and checkable: both measured over a pair set in
+which more than half the attacks need a tool the user's task never uses, which a
+tool-identity policy refuses by name, and neither attacked the components on
+which argument-level enforcement actually rests.
 
 `docs/related-work.md` states the claim, and its limits, in full.
 
@@ -37,10 +38,18 @@ attacked the components on which argument-level enforcement actually rests.
 
 Run `python -m geryon.overlap` and reproduce both in under a minute.
 
-**85 of 949 AgentDojo pairs are within policy at the tool level.** The injection's
+**85 AgentDojo pairs are within policy at the tool level.** The injection's
 required tools are a subset of the user task's, so a least-privilege policy
-authorises everything the attack needs. Evaluations averaged over all 949 pairs
-are dominated by the other 864, which any tool-identity policy blocks for free.
+authorises everything the attack needs. That is 14.0% of the 609 pairs whose
+injection ground truth calls at least one tool. The other 340 of the benchmark's
+949 cannot be classified this way: in 320 the benchmark's reference solution for
+the injection is empty, and 20 need no tool at all, because the attack is scored
+on the agent's reply and no tool policy can refuse it. The remaining 524 need a
+tool the user task never uses, which a tool-identity policy refuses by name.
+
+*Corrected 2026-11-03: earlier versions said 85 of 949 (9%) and counted the 340
+unclassifiable pairs as blocked by a tool policy. See
+`results/within-policy-pairs.md`.*
 
 **0 of 85 are within policy at the argument level.** Every one of them needs at
 least one argument value the user's request never supplies — between one and five,

@@ -13,10 +13,10 @@ its task suites import `secagent` unconditionally. Three consequences:
   Upstream 0.1.35 has v1.2.1 and v1.2.2. Use `--benchmark-version v1.2`.
 - You cannot import the fork's `agentdojo` without `secagent` installed. There is
   no "upstream AgentDojo plus a Progent plugin" configuration.
-- **The repository has no LICENSE file.** Everything else in this project is
-  Apache-2.0; a dependency with no declared licence is a problem for the funding
-  application and for anyone redistributing the harness. Ask the authors before
-  building on it — there is a draft in `outreach/02-progent.md`.
+- **At the commit these runs used, the repository had no LICENSE file.** The
+  authors added an MIT licence on 2026-09-24 (commit `5be7b63`), after another
+  user asked for one, so building on the current code no longer depends on
+  asking.
 
 ### Does the version difference move the pair set?
 
@@ -35,6 +35,21 @@ was already excluded from evidence by the protocol for having too few pairs, so
 **the experiment is unaffected**. `run_condition.py` validates the pair file
 against the live suite and refuses to start if a named task is absent, so this
 class of mismatch fails before any money is spent rather than halfway through.
+
+### Upstream changes since these runs
+
+Every run in `results/` used commit `8a8eb89` (2026-05-14), which each run file
+records as `benchmark_repo_commit`. Upstream has moved twice since:
+
+| commit | date | what it touches |
+|---|---|---|
+| `5be7b63` | 2026-09-24 | adds the MIT `LICENSE` |
+| `b02783b` | 2026-10-26 | `secagent/policy_analysis.py` and `secagent/role_analyzer.py`: the SMT-based policy analysis, which the authors describe as the check every update goes through |
+
+The second commit is titled "fix" and does not reference our report, so nothing
+here says whether the two are related. No run has been repeated on it. A new run
+should pin the commit it uses, as `run_condition.py` already records, and say
+which numbers it can and cannot be compared with.
 
 One more piece of luck worth recording: Progent's own README documents a scoring
 error on slack `injection_task_5`, where a blocked call still appears in the trace
@@ -206,8 +221,8 @@ That is why the reproduction instructions in the eventual report say Bedrock *or
 a local vLLM server: the same `OPENAI_BASE_URL` trick works against
 `http://localhost:8000/v1` once the model id is registered, so
 `scripts/patch_progent_bedrock.py` is all that stands between the fork and any
-self-hosted open-weight model. That patch belongs upstream in Progent, not
-carried privately — see `outreach/02-progent.md`.
+self-hosted open-weight model. That patch belongs upstream in Progent rather than
+carried privately; it has not been offered there yet.
 
 An EC2 GPU instance is the wrong tool for this stage. A fresh AWS account has a
 default quota of zero for G-family instances and the increase has to be requested,

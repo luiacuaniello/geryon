@@ -13,7 +13,7 @@ body:
     attributes:
       label: Which number
       description: The value, and where it appears.
-      placeholder: "9.0% within-policy, README line 12"
+      placeholder: "14.0% within-policy, results/within-policy-pairs.md"
     validations:
       required: true
   - type: textarea

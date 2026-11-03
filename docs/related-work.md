@@ -68,9 +68,9 @@ has already answered the easy version of the question.
    is stated for prompt-level and filter-based defences. It is not established
    for the action-level class.
 3. CaMeL appears in its related work, not in its evaluation.
-4. Its measurement is over the whole pair set, which is dominated by pairs a
-   tool-identity policy blocks for free. It does not report the restricted
-   denominator.
+4. Its measurement is over the whole pair set, in which more than half the pairs
+   need a tool the user task never uses, which a tool-identity policy refuses by
+   name. It does not report the restricted denominator.
 
 ### LaunchSafe (arXiv:2606.26479, June 2026)
 
@@ -99,8 +99,8 @@ Not that the action-level defences are broken. Not that nobody has run an adapti
 attack against them. Only this:
 
 > The one adaptive evaluation that covers action-level defences measured them over
-> a pair set dominated by attacks a tool-identity policy blocks for free, and the
-> defences held. Nobody has reported the restricted denominator, and nobody has
+> a pair set in which more than half the attacks need a tool a tool-identity
+> policy refuses by name, and the defences held. Nobody has reported the restricted denominator, and nobody has
 > attacked the two components on which argument pinning actually rests: the model
 > that decides what to pin, and the boundary at which a value stops being
 > untrusted.

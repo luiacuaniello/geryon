@@ -13,7 +13,8 @@ repository-code: "https://github.com/luiacuaniello/geryon"
 abstract: >-
   An instrument for measuring action-level prompt-injection defences on the
   subset of attacks that reach the attacker's goal using only actions the agent
-  was already authorised to take. Such attacks are 9% of AgentDojo; a
+  was already authorised to take. Such attacks are at least 14% of the AgentDojo
+  pairs whose reference solution names the tools the attack needs; a
   tool-identity policy cannot see them, and no published evaluation reports a
   separate number on them. Includes a pre-registered protocol, a within-policy
   attack corpus, a seeded adaptive attacker, and pilot measurements of Progent

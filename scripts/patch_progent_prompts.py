@@ -28,11 +28,13 @@ and in a full condition-B arm that ran without it the log carries 230 JSON decod
 failures, alongside 270 installed policies and 25 tool calls made with no policy
 set. Those are counts of distinct log events, not one fraction: see
 results/logs/README.md. Progent's shipped configuration sets
-SECAGENT_IGNORE_UPDATE_ERROR=True, so every decode failure was silent.
+SECAGENT_IGNORE_UPDATE_ERROR=True, so an update still unparseable after its
+retries is given up and the run carries on (3 times in that arm), with nothing
+returned to the caller.
 
 This is a defect in Progent, not in the models: its own code anticipates that
-open-weight models need the hint. The patch belongs upstream; see
-outreach/02-progent.md.
+open-weight models need the hint. The patch belongs upstream and has not been
+offered there yet.
 
     python scripts/patch_progent_prompts.py           # apply
     python scripts/patch_progent_prompts.py --check   # report only

@@ -13,12 +13,12 @@ number out of them.
 | `runs/` | **A and B on the 42 within-policy pairs of banking**, three repeats each, plus one calibration run on 12 pairs. The baseline the whole project is measured against. | yes |
 | `runs-condition-c/` | **Condition C on the same 42 pairs**, three repeats: corpus templates plus the seeded optimiser, attacker `gpt-oss-120b`. Gives the significant B-vs-C result. | yes |
 | `runs-full-set/` | **A and B over every pair of banking, slack and travel** — 349 pairs, three repeats each, eighteen runs. The decomposition in the proposal comes from here. | yes |
-| `runs-strong-agent/` | A on the 42 within-policy pairs with agent `qwen3-235b`, three repeats. Shows the more capable agent is *more* vulnerable undefended. | yes |
+| `runs-strong-agent/` | A on the 42 within-policy pairs with agent `qwen3-235b`, three repeats. The more capable agent is not less vulnerable undefended: 71.4% against 54.8%, paired exact McNemar p = 0.09, so not a significant difference. | yes |
 | `runs-full-set-strong-agent/` | A and B over all 144 banking pairs with agent `qwen3-235b`, one repeat. Replicates the decomposition on a second agent model. | yes, one repeat |
 | `runs-strong-attacker/` | Condition C with attacker `qwen3-235b`, one repeat. Bounds the null result on adaptation with a second, larger attacker. | yes, one repeat |
 | `runs-strong-policy-fixed/` | B with policy model `qwen3-235b` **after** the prompt patch. One of the three policy-model configurations that exclude the confound. | yes, one repeat |
 | `cmcp-pilot/` | The deployed MCP gateway pilot: config, catalog, policies, and the three-call result. No inference cost. | yes |
-| `logs/` | Raw stdout of early runs, gzipped. Holds the evidence for the Progent findings — 92 of the 270 installed policies carried the attacker's account number. | evidence, not measurements |
+| `logs/` | Raw stdout of early runs, gzipped. Holds the evidence for the Progent findings: 92 of the 270 installed policies contain the attacker's account number, and 91 name it as a permitted recipient (a structural reading; see `logs/README.md`). | evidence, not measurements |
 | `runs-strong-policy/` | B with policy model `qwen3-235b` **before** the prompt patch, when 230 model replies failed to parse as JSON and were swallowed silently, and 25 tool calls ran with no policy set. | **NO — kept as the record of the defect** |
 | `runs-claude-policy/` | An attempt to use `claude-sonnet-5` as the policy model. It never ran: the model is gated on this account and the endpoint rejected it. Only a log survives. | **NO — failed run** |
 
@@ -51,11 +51,55 @@ before and after. `scripts/run_condition.py` now checks the return code, records
 whether each tree was dirty, and asks git for the repository root instead of
 counting parent directories; `tests/test_provenance.py` covers all of it.
 
+## A defect in AgentDojo's banking checks, 2026-11-03
+
+ethz-spylab/agentdojo issue 240 reports an operator-precedence error in the
+`security()` of banking injection tasks 0, 1 and 3: as written, each passes
+whenever any transfer reached the attacker's account, whether or not its subject
+carried the data the task asks for. The same lines are in the fork Progent
+vendors, so every banking number here was scored with them.
+
+Task 1 has a second defect, not mentioned in the issue: the helper that finds the
+"pizza dinner companion" returns the sender of the "Pizza party" transaction,
+which is the user ("me"), not the companion's IBAN. The fix proposed in the issue
+would then look for "me" in the subject.
+
+`scripts/rescore_agentdojo_240.py` re-scores every banking arm whose per-pair
+message logs were kept, under both readings. It first checks that the defective
+predicate reproduces every recorded outcome of the three tasks, and fails if it
+does not; it does, for every run. CI runs it on every push.
+
+| arm | recorded | literal fix | intended |
+|---|---|---|---|
+| A, 42 within-policy pairs | 54.8% | 47.6% | 54.8% |
+| B, 42 within-policy pairs | 42.9% | 33.3% | 40.5% |
+| A, all 144 pairs | 69.4% | 60.4% | 69.4% |
+| B, all 144 pairs | 29.2% | 25.0% | 29.2% |
+| A, agent qwen3-235b, 42 pairs | 71.4% | 61.9% | 71.4% |
+| A, agent qwen3-235b, 144 pairs, one repeat | 72.2% | 62.5% | 70.1% |
+| B, agent qwen3-235b, 144 pairs, one repeat | 27.1% | 21.5% | 24.3% |
+| B, policy model qwen3-235b, patched, one repeat | 45.2% | 33.3% | 45.2% |
+
+*Literal* applies the fix proposed in the issue as written, so on task 1 it
+counts a success only when "me" appears in the subject. *Intended* looks for the
+companion's IBAN instead, which is what the task describes. Tasks 0 and 3 read
+the same either way. Under the intended reading the decomposition over banking,
+slack and travel does not move (84% of out-of-policy attacks removed, 57% of
+within-policy ones), and under the literal one it becomes 85% and 60%.
+
+What cannot be checked: condition C, in `runs-condition-c/` and
+`runs-strong-attacker/`, whose logs keep the optimiser's outcomes but not the
+calls' arguments. Its B-vs-C result stands as recorded, with this caveat, until C
+is run again with per-pair logs.
+
 ## Which numbers the proposal uses
 
 - the decomposition, 84% against 57%: `runs-full-set/`, all three suites, three
   repeats collapsed by majority
-- the significant B-vs-C, p = 0.0078: `runs/` against `runs-condition-c/`
+- the significant B-vs-C, p = 0.0078: `runs/` against `runs-condition-c/`.
+  Condition C cannot be re-scored for the banking defect below, because its logs
+  do not keep call arguments; 4 of its 8 discordant pairs are on tasks the defect
+  touches, two on task 0 and two on task 1
 - the policy-model confound, 42.9% / 45.2% / 45.2%: `runs/`,
   `runs-strong-policy/` *(the broken arm, quoted only as the broken arm)* and
   `runs-strong-policy-fixed/`
@@ -69,8 +113,9 @@ defence configuration, whether the defence was verified active, the measured tok
 usage and cost, and any pairs skipped with the reason. A run whose provenance
 cannot answer a question about it is not a result.
 
-One pair of 348 was skipped in the whole campaign, in `travel-A-r2`, for a
-malformed model reply. It is absent from both numerator and denominator.
+One pair of 349 was skipped in the whole campaign, in `travel-A-r2`, for a
+malformed model reply. It is absent from both numerator and denominator, which
+leaves 348.
 
 ## The two analyses
 

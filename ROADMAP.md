@@ -16,8 +16,9 @@ that the question is real and answerable, not a milestone to invoice.
   run logger; 55 tests, CI on every push
 - `scripts/` — the three-condition runner with full per-run provenance and cost
   metering, and an analysis that refuses to report incomparable runs
-- `results/` — the pair counts (85 of 949 at tool level, 0 at argument level) and
-  the first measurements on the banking suite, including the raw logs
+- `results/` — the pair counts (85 of the 609 classifiable pairs at tool level, 0
+  at argument level) and the first measurements on the banking suite, including
+  the raw logs
 
 What the pilot does not have: more than one suite, more than one defence, and
 more than one repeat of the decisive condition. That is where the funding starts.

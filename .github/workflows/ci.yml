@@ -22,6 +22,8 @@ jobs:
         run: PYTHONPATH=src python -m geryon.cases
       - name: pre-registered statistics
         run: PYTHONPATH=src python -m geryon.stats
+      - name: re-score banking injection tasks 0, 1 and 3 for agentdojo#240
+        run: PYTHONPATH=src python scripts/rescore_agentdojo_240.py
       - name: tests that do not need the benchmark
         run: PYTHONPATH=src python -m pytest tests/test_corpus.py tests/test_stats.py
 

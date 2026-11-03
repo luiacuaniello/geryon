@@ -11,6 +11,7 @@ import pytest
 pytest.importorskip("agentdojo", reason="AgentDojo is needed for the pair analysis")
 
 from geryon.overlap import (  # noqa: E402
+    EXPECTED_NO_TOOL_INJECTION_V121,
     EXPECTED_PAIRS_V121,
     EXPECTED_WITHIN_POLICY_V121,
     analyse_suite,
@@ -31,6 +32,17 @@ def test_published_counts_still_hold(suite):
     assert len(report.pairs) == EXPECTED_PAIRS_V121[suite]
     assert report.within_policy == EXPECTED_WITHIN_POLICY_V121[suite]
     assert not check_expected([report], "v1.2.1")
+
+
+@pytest.mark.parametrize("suite", sorted(EXPECTED_PAIRS_V121))
+def test_pairs_whose_injection_calls_no_tool_are_counted_apart(suite):
+    """They are not out of policy, so they must not sit in the denominator as if they were."""
+    report = analyse_suite(suite)
+    assert report.no_tool_injection == EXPECTED_NO_TOOL_INJECTION_V121[suite]
+    assert report.classifiable == len(report.pairs) - report.no_tool_injection
+    for pair in report.pairs:
+        if not pair.injection_tools:
+            assert not pair.within_policy
 
 
 @pytest.mark.parametrize("suite", sorted(EXPECTED_PAIRS_V121))
