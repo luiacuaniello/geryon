@@ -17,8 +17,7 @@ abstract: >-
   pairs whose reference solution names the tools the attack needs; a
   tool-identity policy cannot see them, and no published evaluation reports a
   separate number on them. Includes a pre-registered protocol, a within-policy
-  attack corpus, a seeded adaptive attacker, and pilot measurements of Progent
-  and of one deployed MCP gateway.
+  attack corpus, a seeded adaptive attacker, and pilot measurements of Progent.
 keywords:
   - prompt-injection
   - llm-security

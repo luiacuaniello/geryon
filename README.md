@@ -178,9 +178,12 @@ matters here.
 
 **The deployed layer**
 - [cMCP](https://github.com/agentrust-io/cmcp) — MCP gateway with a Cedar policy
-  engine. Measured by execution; see `results/cmcp-pilot/`.
+  engine. The pilot's finding, that the engine is never given the call's
+  arguments, was withdrawn on 2026-11-03 after a re-test; see
+  `results/cmcp-pilot/`.
 - [mcp-gateway-registry](https://github.com/agentic-community/mcp-gateway-registry)
-  — the most widely used open-source MCP gateway. Read, not run.
+  — the most widely used open-source MCP gateway. Read, not run, and unverified
+  until it is.
 
 ## Scope
 

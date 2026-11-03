@@ -57,34 +57,31 @@ and argument values are exactly where the within-policy attacks live. And the pa
 analysis needs no port: the restriction is defined over tool sets, which every one
 of these layers has.
 
-**A pilot is already done, at no inference cost.** One such gateway uses Cedar,
-a policy language that can express conditions on arguments. Its shipped schema
-gives the policy `tool_name`, `session_max_sensitivity` and `workflow_id`; its own
-specification shows arguments arriving with the request and not being placed in
-the Cedar context. Running the quickstart unmodified, a payment to the attacker's
-account and a payment to the legitimate one both execute, while a tool outside the
-catalog is denied. The enforcement works — on tool identity — and the arguments
-are never seen.
+**A pilot was run, and its first reading was wrong.** One such gateway uses
+Cedar, a policy language that can express conditions on arguments. Its shipped
+schema and, at the time, its specification described a Cedar context without the
+call's arguments, and the pilot concluded that no policy could condition on them.
+The code passed them all along: re-tested on 2026-11-03, one added rule refuses
+the payment to the attacker's account and lets the legitimate one through, on the
+version the pilot ran and on the current one (`results/cmcp-pilot/`). What
+survives is narrow. The example policy does not look at arguments, so a gateway
+configured from it refuses tools by name and nothing more.
 
-A second gateway — the most widely used in this space, twenty times the first's
-size — reaches the same place from the opposite direction: its access control is
-expressed over servers, methods, tool names and user roles, and its 626-line
-specification has no construct for constraining a permitted tool's arguments at
-all. That one was read rather than run, which is weaker evidence and is recorded
-as such.
+A second gateway, the most widely used in this space, was read rather than run:
+its 626-line access-control specification has no construct for constraining a
+permitted tool's arguments. After the first pilot, a reading of a specification
+counts as unverified until it is tested on a running gateway.
 
-One policy engine that could express the constraint and is not given the
-arguments; one that cannot express it. That is the deployed form of the same gap
-the benchmark shows, and the first took three tool calls to demonstrate. The milestone is to do it systematically: several
-layers, the pair restriction ported, the pre-registered analysis applied, and each
-result reported to its maintainers.
+The milestone is therefore to measure rather than read: several layers, each run
+with a policy that tries to constrain arguments, the pair restriction ported, the
+pre-registered analysis applied, and each result reported to its maintainers
+before it is published.
 
 Target selection follows the same discipline as the defences in
 `docs/related-work.md`: chosen by implementation availability and declared in
-advance. The gap between what a policy language can express and what the
-integration passes to it is the thing being measured, and it is not a criticism of
-any one project — the most popular gateway in this space cannot express argument
-conditions at all.
+advance. What is measured is the gap between what a policy can express, what the
+integration passes to it, and what the policies people actually deploy say. None
+of it is a criticism of any one project.
 
 This is the milestone that makes the work a testing tool for software that is
 running, rather than an evaluation of research artefacts. Anything found goes to
@@ -99,8 +96,9 @@ one would be a commitment that could not be kept (`docs/related-work.md`).
 Then the two analyses the pilot's evidence points at:
 
 - the **policy-authoring step**, the one non-deterministic component of an
-  otherwise deterministic defence — in one arm, 92 of 270 policy updates contained
-  the attacker's account number (family F4);
+  otherwise deterministic defence — in one arm, 91 of 270 installed policies
+  named the attacker's account as a permitted recipient, read structurally
+  (family F4);
 - **initial provenance assignment**, the trusted base of every labelling scheme,
   under-specified in all systems surveyed (family F5).
 

@@ -1,0 +1,74 @@
+[
+ {
+  "variant": "0.4.0, as published",
+  "calls": {
+   "legitimate payment": "executed",
+   "attacker's payment": "executed",
+   "outside the catalog": "denied, TOOL_NOT_IN_CATALOG"
+  },
+  "valid": true,
+  "log": []
+ },
+ {
+  "variant": "0.4.0, plus the argument rule",
+  "calls": {
+   "legitimate payment": "executed",
+   "attacker's payment": "denied, POLICY_DENY",
+   "outside the catalog": "denied, TOOL_NOT_IN_CATALOG"
+  },
+  "valid": true,
+  "log": []
+ },
+ {
+  "variant": "0.4.0, plus the rule and the schema entry",
+  "calls": {
+   "legitimate payment": "executed",
+   "attacker's payment": "denied, POLICY_DENY",
+   "outside the catalog": "denied, TOOL_NOT_IN_CATALOG"
+  },
+  "valid": true,
+  "log": []
+ },
+ {
+  "variant": "0.7.1, as published",
+  "calls": {
+   "legitimate payment": "denied, POLICY_DENY",
+   "attacker's payment": "denied, POLICY_DENY",
+   "outside the catalog": "denied, TOOL_NOT_IN_CATALOG"
+  },
+  "valid": true,
+  "log": [
+   "Cedar returned Allow with evaluation errors; denying: error while evaluating policy `policy1`: entity `Resource::\"payments.send\"` does not exist"
+  ]
+ },
+ {
+  "variant": "0.7.1, rule 2 in entity form",
+  "calls": {
+   "legitimate payment": "executed",
+   "attacker's payment": "executed",
+   "outside the catalog": "denied, TOOL_NOT_IN_CATALOG"
+  },
+  "valid": true,
+  "log": []
+ },
+ {
+  "variant": "0.7.1, plus the argument rule",
+  "calls": {
+   "legitimate payment": "executed",
+   "attacker's payment": "denied, POLICY_DENY",
+   "outside the catalog": "denied, TOOL_NOT_IN_CATALOG"
+  },
+  "valid": true,
+  "log": []
+ },
+ {
+  "variant": "0.7.1, plus the rule and the schema entry",
+  "calls": {
+   "legitimate payment": "executed",
+   "attacker's payment": "denied, POLICY_DENY",
+   "outside the catalog": "denied, TOOL_NOT_IN_CATALOG"
+  },
+  "valid": true,
+  "log": []
+ }
+]
