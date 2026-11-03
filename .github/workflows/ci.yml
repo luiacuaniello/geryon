@@ -24,6 +24,8 @@ jobs:
         run: PYTHONPATH=src python -m geryon.stats
       - name: re-score banking injection tasks 0, 1 and 3 for agentdojo#240
         run: PYTHONPATH=src python scripts/rescore_agentdojo_240.py
+      - name: re-score slack injection task 5, counting only the calls that ran
+        run: PYTHONPATH=src python scripts/rescore_slack_task5.py --decomposition
       - name: tests that do not need the benchmark
         run: PYTHONPATH=src python -m pytest tests/test_corpus.py tests/test_stats.py
 

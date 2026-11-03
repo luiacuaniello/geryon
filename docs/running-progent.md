@@ -55,7 +55,9 @@ One more piece of luck worth recording: Progent's own README documents a scoring
 error on slack `injection_task_5`, where a blocked call still appears in the trace
 and is wrongly counted as a success, which its authors corrected by hand. The
 slack within-policy set is `injection_task_1` and `injection_task_3` only. The
-restricted measurement never touches the contaminated task.
+restricted measurement never touches the contaminated task. The full-set
+measurement does, and was re-scored for it on 2026-11-03: see
+`results/README.md` and `scripts/rescore_slack_task5.py`.
 
 ## 1. The three conditions, and how the switch works
 
