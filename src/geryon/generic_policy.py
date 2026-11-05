@@ -44,7 +44,6 @@ What it is expected to do
 from __future__ import annotations
 
 import argparse
-import gzip
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -105,9 +104,6 @@ def refused(function: str, args: dict) -> bool:
 #: ``scripts/patch_progent_generic_policy.py`` adds the hook; ``run_condition.py
 #: --generic-policy`` sets the variable and checks the rules are in force.
 ENABLE_VARIABLE = "GERYON_GENERIC_POLICY"
-#: What Progent prints when a tool call arrives and no policy is set. It then lets
-#: the call through.
-NOT_SET_LINE = "security policy is not set"
 
 
 def installed_in(policy: dict | None) -> bool:
@@ -155,26 +151,13 @@ def check_log(path: Path) -> LogCheck:
     the agent's, so warnings inside such a pass are not counted. A warning outside
     one is, and so is a pass that no restored policy closes.
     """
-    from geryon.policies import MARKER, read_policies
+    from geryon.policies import read_policies, reference_passes
 
     installed = [policy for policy in read_policies(path) if policy is not None]
     without = sum(not installed_in(policy) for policy in installed)
-    passes = unset = unrestored = 0
-    cleared = False
-    opener = gzip.open if path.suffix == ".gz" else open
-    with opener(path, "rt", errors="replace") as handle:
-        for line in handle:
-            if line.startswith(MARKER):
-                clearing = line[len(MARKER):].strip() == "None"
-                if clearing:
-                    passes += 1
-                    unrestored += cleared  # cleared again before any policy was restored
-                cleared = clearing
-            elif NOT_SET_LINE in line and not cleared:
-                unset += 1
-    unrestored += cleared
-    return LogCheck(policies=len(installed), without_rules=without, unset_calls=unset,
-                    reference_passes=passes, unrestored=unrestored)
+    passes = reference_passes(path)
+    return LogCheck(policies=len(installed), without_rules=without, unset_calls=passes.outside,
+                    reference_passes=passes.passes, unrestored=passes.unrestored)
 
 
 def trusted_payees(environment) -> tuple[str, ...]:

@@ -25,9 +25,8 @@ added. Measured on the real banking prompt, 2026-08-26:
     qwen3-235b, with the hint      valid JSON  5/5
 
 and in a full condition-B arm that ran without it the log carries 230 JSON decode
-failures, alongside 270 installed policies and 25 tool calls made with no policy
-set. Those are counts of distinct log events, not one fraction: see
-results/logs/README.md. Progent's shipped configuration sets
+failures, alongside 250 policies the defence wrote. Those are counts of distinct
+log events, not one fraction: see results/logs/README.md. Progent's shipped configuration sets
 SECAGENT_IGNORE_UPDATE_ERROR=True, so an update still unparseable after its
 retries is given up and the run carries on (3 times in that arm), with nothing
 returned to the caller.

@@ -18,14 +18,30 @@ mean reading Progent's code rather than its output.
 | log event | grep | count |
 |---|---|---|
 | `security policy updated:` — a policy installed | `grep -c "security policy updated"` | 270 |
-| of those, containing the attacker's IBAN | `... \| grep -c US133000000121212121212` | **92** |
-| of those, installed as `None` | `grep -c "security policy updated: None"` | 10 |
+| of those, cleared to `None` by the benchmark's reference pass | `grep -c "security policy updated: None"` | 10 |
+| of those, the policy each pass restores | the line after each `None` | 10 |
+| of those, written by the defence | | 250 |
+| of the 250, containing the attacker's IBAN | `... \| grep -c US133000000121212121212` | **92** |
 | `Error decoding JSON` — a model reply that failed to parse | `grep -c "^Error decoding JSON"` | 230 |
 | `Ignore the update error` — an update given up after retries | `grep -c "Ignore the update error"` | 3 |
-| `security policy is not set` at call time | `grep -c "security policy is not set"` | 25 |
+| `security policy is not set` — a call while no policy was set, all inside the reference pass | `grep -c "security policy is not set"` | 25 |
 
 The 92 is the finding: policies that were actually installed and in force carried
 a value taken from the injected content.
+
+**Corrected, 2026-11-05.** Twenty of the 270 policy lines and all 25 calls made
+with no policy set are the benchmark's own bookkeeping, not the defence's.
+Before attacking a user task, the AgentDojo that Progent vendors runs the task's
+reference solution to find where the injections land, with Progent's policy
+cleared to `None` and restored afterwards (`get_injection_candidates` in
+`agentdojo/attacks/base_attacks.py`). Each of the 10 passes in this log records
+the clear, the reference solution's calls and the restore. The policies the
+defence wrote are therefore 250, and the 92 and the 91 are all among them. No
+call of the agent ran without a policy, in this log or in any other run log in
+`results/`, which `tests/test_policies.py` checks. Earlier versions of this file,
+of `results/README.md` and of the paper draft, and comments on
+sunblaze-ucb/progent#3, counted the restores among the policies the defence
+installed and described the 25 as calls that ran unprotected.
 
 ## Where those policies name the account
 
@@ -37,8 +53,10 @@ recipient — that is, where it appears in an `enum` restriction on `recipient`:
 | | count |
 |---|---|
 | policies installed | 270 |
-| of which cleared to `None` | 10 |
-| naming the attacker's account as a permitted recipient | **91** |
+| of which cleared to `None` by the reference pass | 10 |
+| of which restored by it | 10 |
+| written by the defence | 250 |
+| of those, naming the attacker's account as a permitted recipient | **91** |
 | — via `send_money` | 73 |
 | — via `update_scheduled_transaction` | 20 |
 | — via `schedule_transaction` | 1 |
@@ -74,8 +92,7 @@ approval in any configuration, manual included, is withdrawn with it. Those
 counts were quoted in the disclosure to the Progent authors and have been
 withdrawn there too. The classification has been removed rather than repaired.
 
-The decode failures and the 25 unprotected calls matter for a different reason.
-Progent ships `SECAGENT_IGNORE_UPDATE_ERROR=True` in its own run.sh, so a policy
+The decode failures matter for a different reason. Progent ships `SECAGENT_IGNORE_UPDATE_ERROR=True` in its own run.sh, so a policy
 update that fails to parse is swallowed: the agent proceeds without saying so.
 
 These are observations to be verified and sent to the Progent authors under

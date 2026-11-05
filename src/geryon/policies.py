@@ -25,6 +25,15 @@ produced were withdrawn on 2026-09-23. It has been removed rather than repaired.
 **A log line is not a pair.** Policy resets do not align with (user task,
 injection task) boundaries, so counts here are per installed policy, never per
 pair. Do not convert them into a per-pair rate.
+
+**Not every logged policy is the defence's.** Before attacking a user task, the
+AgentDojo that Progent vendors runs the task's reference solution to find where
+the injections land, with Progent's policy cleared to ``None`` and then restored
+(``get_injection_candidates`` in ``agentdojo/attacks/base_attacks.py``). Each such
+pass logs the clear, a "not set" warning for every reference call, and the
+restored policy. :func:`analyse` counts the clears and restores apart from the
+policies the defence wrote, and :func:`reference_passes` checks that no call ran
+without a policy outside those passes.
 """
 
 from __future__ import annotations
@@ -39,6 +48,8 @@ from pathlib import Path
 
 #: The line Progent emits for every policy it installs.
 MARKER = "security policy updated:"
+#: What Progent prints when a call arrives while no policy is set. It lets the call through.
+NOT_SET = "security policy is not set"
 
 #: Tools that move money in AgentDojo's banking suite. The argument that decides
 #: where it goes is the same in all three.
@@ -60,9 +71,20 @@ class PolicyUnreadable(ValueError):
 class Report:
     installed: int = 0
     unset: int = 0
+    restored: int = 0
     authorising: int = 0
     by_tool: dict[str, int] = field(default_factory=dict)
     exclusive: int = 0
+
+
+@dataclass
+class ReferencePasses:
+    """The benchmark's reference passes in a log, and the unset-policy calls inside and outside them."""
+
+    passes: int = 0
+    inside: int = 0
+    outside: int = 0
+    unrestored: int = 0
 
 
 def read_policies(path: Path) -> Iterator[dict | None]:
@@ -111,12 +133,47 @@ def authorises(policy: dict, account: str, tools: Iterable[str] = MOVERS) -> lis
     return hits
 
 
+def reference_passes(path: Path) -> ReferencePasses:
+    """Count a log's reference passes and the calls made with no policy set, inside and outside them.
+
+    A pass opens with ``security policy updated: None`` and closes at the next
+    policy line, which restores whatever was set before it: ``None`` too, when
+    nothing was, as in runs without a defence. A pass the log never closes counts
+    as unrestored.
+    """
+    found = ReferencePasses()
+    in_pass = False
+    opener = gzip.open if path.suffix == ".gz" else open
+    with opener(path, "rt", errors="replace") as handle:
+        for line in handle:
+            if line.startswith(MARKER):
+                if in_pass:
+                    in_pass = False
+                elif line[len(MARKER):].strip() == "None":
+                    in_pass = True
+                    found.passes += 1
+            elif NOT_SET in line:
+                if in_pass:
+                    found.inside += 1
+                else:
+                    found.outside += 1
+    found.unrestored = int(in_pass)
+    return found
+
+
 def analyse(path: Path, account: str = BANKING_ATTACKER_ACCOUNT) -> Report:
+    """Policies as the log installed them; restores re-install a policy and are not read again."""
     report = Report()
+    in_pass = False
     for policy in read_policies(path):
         report.installed += 1
+        if in_pass:
+            in_pass = False
+            report.restored += 1
+            continue
         if policy is None:
             report.unset += 1
+            in_pass = True
             continue
         hits = authorises(policy, account)
         if hits:
@@ -135,8 +192,13 @@ def main(argv: list[str] | None = None) -> int:
     args = ap.parse_args(argv)
 
     r = analyse(args.log, args.account)
+    passes = reference_passes(args.log)
     print(f"policies installed              {r.installed}")
-    print(f"  of which cleared to None      {r.unset}")
+    print(f"  cleared to None by the benchmark's reference pass   {r.unset}")
+    print(f"  restored by that pass afterwards                    {r.restored}")
+    print(f"  written by the defence                              {r.installed - r.unset - r.restored}")
+    print(f"calls made with no policy set   {passes.inside + passes.outside}, "
+          f"outside the reference pass {passes.outside}")
     print(f"naming as a permitted recipient {args.account}")
     print(f"  policies                      {r.authorising}")
     for tool, n in sorted(r.by_tool.items(), key=lambda kv: -kv[1]):

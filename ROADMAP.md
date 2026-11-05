@@ -96,7 +96,7 @@ one would be a commitment that could not be kept (`docs/related-work.md`).
 Then the two analyses the pilot's evidence points at:
 
 - the **policy-authoring step**, the one non-deterministic component of an
-  otherwise deterministic defence — in one arm, 91 of 270 installed policies
+  otherwise deterministic defence — in one arm, 91 of the 250 policies it wrote
   named the attacker's account as a permitted recipient, read structurally
   (family F4);
 - **initial provenance assignment**, the trusted base of every labelling scheme,
