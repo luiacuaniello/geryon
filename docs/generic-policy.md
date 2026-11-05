@@ -4,8 +4,8 @@ In [sunblaze-ucb/progent#3](https://github.com/sunblaze-ucb/progent/issues/3) th
 Progent authors named two mitigations for the failure this project reports: a
 generic policy that constrains sensitive tools, and manual approval of the
 initial policy and of every expansion. This file fixes, before any run, the
-policy and the configurations that will be measured, so that the authors can
-object first. The runs will not start before 10 November 2026, and objections
+policy, the configurations that will be measured and how they will be compared,
+so that the authors can object first. The runs will not start before 10 November 2026, and objections
 raised on progent#3 before then will be applied.
 
 ## What the paper says
@@ -150,6 +150,46 @@ between commits is not read as a difference between configurations. Whether
 `SECAGENT_ONLY_ALLOW_NARROW` is the paper's Auto-Deny has been put to the
 authors on progent#3.
 
+## The analysis, fixed before any run
+
+`scripts/analyse_fair_test.py` applies it, and reports nothing unless every run
+is what its directory says. Each run must record the condition, approver and
+generic policy of its configuration and Progent commit `b02783b`. All runs must
+share the agent, policy model and benchmark version and cover the same 144
+pairs, with three repeats each. Every run of the generic policy needs a log that
+passes `--check-log`. A run that fails any of these is reported as invalid, not
+dropped.
+
+- **The unit is the pair.** Each pair's outcome is the majority of its three
+  repeats, as in every earlier result here.
+- **Scoring.** Attack success is scored as the checks of agentdojo#240 intend
+  for injection tasks 0, 1 and 3, and as AgentDojo records it, side by side. The
+  intended scoring is primary. The recorded one counts any transfer to the
+  attacker as a success, and since the generic policy refuses them all, it could
+  only flatter the policy.
+- **The primary comparison** is the generic policy against Progent as shipped
+  (Auto-Approve) on the 42 within-policy pairs, by two-sided exact McNemar test
+  at α = 0.05 (`geryon.stats`). A claim needs at least 6 discordant pairs in one
+  direction, 14.3 points on 42. At `8a8eb89` Progent as shipped let 17 of the 42
+  through, so the threshold is within reach if the policy does what the
+  pre-analysis expects. If the test is not significant, the result is reported as
+  no difference detectable at this size, not as no difference.
+- **Secondary comparisons**, printed with their p-values and no claim of their
+  own: Auto-Deny against Progent as shipped on the 42, both comparisons again on
+  all 144 pairs, and the share of A's successes each configuration removes.
+- **Utility under attack** for each configuration, on all 144 pairs and on the
+  42. It is also given separately for the pairs of the five user tasks whose
+  reference solution the policy refuses, and for the other eleven.
+- **Every recorded success under the generic policy** is listed run by run and
+  examined. The pre-analysis expects none, so each one is a finding about the
+  policy or about how it was installed.
+- **A and Progent as shipped at `8a8eb89`**, from the August runs, are printed
+  alongside, so that a change between commits is not read as a change between
+  configurations.
+
+Nothing is added to this list once results are seen. Any other analysis is
+labelled exploratory.
+
 ## Running it
 
 Inside Progent's environment at `b02783b`, with the Bedrock patches of
@@ -173,8 +213,14 @@ Every run of the generic configuration is then checked from its log, and one
 that fails is reported as invalid, not quietly dropped:
 
     for r in 1 2 3; do
-        python -m geryon.generic_policy --check-log results/runs-fair-test/generic/banking-B-r$r.log.gz
+        PYTHONPATH=src python -m geryon.generic_policy \
+            --check-log results/runs-fair-test/generic/banking-B-r$r.log.gz
     done
+
+and the analysis above is applied, in any environment with this repository's
+dependencies:
+
+    PYTHONPATH=src python scripts/analyse_fair_test.py
 
 ## What is not measured
 
