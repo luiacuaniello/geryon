@@ -37,6 +37,25 @@ from geryon import runlog  # noqa: E402
 
 CONDITIONS = ("A", "B", "C")
 
+#: Progent's approver configurations, named as in its paper (arXiv:2504.11703 v3,
+#: section 8.2), with the environment each needs. In the vendored AgentDojo the
+#: policy update runs only when SECAGENT_UPDATE is the string "True", and
+#: SECAGENT_ONLY_ALLOW_NARROW is read inside that update, so on its own it does
+#: nothing: with updates off the configuration is Disable Update, not Auto-Deny.
+APPROVERS = {
+    "auto-approve": {"SECAGENT_UPDATE": "True"},
+    "auto-deny": {"SECAGENT_UPDATE": "True", "SECAGENT_ONLY_ALLOW_NARROW": "True"},
+    "disable-update": {"SECAGENT_UPDATE": "False"},
+}
+GENERIC_POLICY_VARIABLE = "GERYON_GENERIC_POLICY"
+
+
+def resolve_approver(args) -> str:
+    """--approver wins; --policy-updates is the older spelling of auto-approve."""
+    if args.approver and args.policy_updates and args.approver != "auto-approve":
+        raise SystemExit("--policy-updates means --approver auto-approve; pass one or the other")
+    return args.approver or ("auto-approve" if args.policy_updates else "disable-update")
+
 #: USD per million tokens for openai.gpt-oss-120b on Bedrock, standard tier.
 #: Only used to turn the measured token counts into a number a human can act on;
 #: the token counts themselves are the record.
@@ -187,14 +206,15 @@ def configure_environment(args) -> dict[str, str]:
         os.environ["SECAGENT_SUITE"] = args.suite
 
     os.environ["SECAGENT_POLICY_MODEL"] = args.policy_model
-    os.environ["SECAGENT_UPDATE"] = "True" if args.policy_updates else "False"
     os.environ["SECAGENT_IGNORE_UPDATE_ERROR"] = "True"
-    if not args.policy_updates:
-        os.environ["SECAGENT_ONLY_ALLOW_NARROW"] = "True"
+    os.environ.pop("SECAGENT_ONLY_ALLOW_NARROW", None)
+    os.environ.update(APPROVERS[args.approver])
+    if args.generic_policy:
+        os.environ[GENERIC_POLICY_VARIABLE] = "True"
     else:
-        os.environ.pop("SECAGENT_ONLY_ALLOW_NARROW", None)
+        os.environ.pop(GENERIC_POLICY_VARIABLE, None)
 
-    return {k: v for k, v in os.environ.items() if k.startswith("SECAGENT_")}
+    return {k: v for k, v in os.environ.items() if k.startswith(("SECAGENT_", "GERYON_"))}
 
 
 
@@ -299,7 +319,13 @@ def main() -> int:
     ap.add_argument("--pairs", default="results/pairs.json")
     ap.add_argument("--out-dir", default="results/runs")
     ap.add_argument("--policy-updates", action="store_true",
-                    help="SECAGENT_UPDATE=True (Progent's shipped default); off means narrow-only")
+                    help="same as --approver auto-approve, Progent's shipped default")
+    ap.add_argument("--approver", choices=sorted(APPROVERS),
+                    help="Progent's approver configuration; default auto-approve with --policy-updates, "
+                         "otherwise disable-update")
+    ap.add_argument("--generic-policy", action="store_true",
+                    help="banking only: install the generic policy of docs/generic-policy.md "
+                         "(needs scripts/patch_progent_generic_policy.py)")
     ap.add_argument("--limit-user-tasks", type=int, default=0,
                     help="use only the first N user tasks; for cost calibration, NOT publishable")
     ap.add_argument("--attacker-model", default="openai.gpt-oss-120b",
@@ -318,6 +344,9 @@ def main() -> int:
 
     if args.condition == "A" and args.attack != "important_instructions":
         raise SystemExit("condition A is the no-defence baseline and uses the standard attack")
+    args.approver = resolve_approver(args)
+    if args.generic_policy and (args.condition == "A" or args.suite != "banking"):
+        raise SystemExit("--generic-policy applies to the defended conditions on banking only")
 
     log_path = None
     if not args.dry_run and not args.no_log_file:
@@ -398,6 +427,14 @@ def _run(args, log_path) -> int:
             "Check SECAGENT_SUITE and that agentdojo resolves to Progent's vendored copy."
         )
 
+    generic_in_force = _generic_policy_in_force() if expected else None
+    if expected and bool(generic_in_force) != bool(args.generic_policy):
+        raise SystemExit(
+            f"--generic-policy is {'on' if args.generic_policy else 'off'}, but the generic rules are "
+            f"{'not ' if not generic_in_force else ''}in Progent's policy. Apply "
+            "scripts/patch_progent_generic_policy.py, or check GERYON_GENERIC_POLICY."
+        )
+
     provenance = {
         "timestamp": datetime.now(UTC).isoformat(),
         "condition": args.condition,
@@ -407,7 +444,9 @@ def _run(args, log_path) -> int:
         "agent_model": args.model,
         "policy_model": args.policy_model if args.condition != "A" else None,
         "attack": args.attack,
-        "policy_updates_permitted": bool(args.policy_updates) if args.condition != "A" else None,
+        "policy_updates_permitted": (args.approver != "disable-update") if args.condition != "A" else None,
+        "approver": args.approver if args.condition != "A" else None,
+        "generic_policy": generic_in_force,
         "secagent_env": secagent_env if args.condition != "A" else {},
         "defence_active": wrapped,
         "agentdojo_path": str(Path(agentdojo.__file__).resolve().parent),
@@ -503,6 +542,17 @@ def _run(args, log_path) -> int:
     if log_path is not None:
         print(f"  log: {log_path}.gz")
     return 0
+
+
+def _generic_policy_in_force() -> bool | None:
+    """Whether the generic rules are in Progent's policy now, read off Progent itself."""
+    try:
+        import secagent
+    except ImportError:
+        return None
+    from geryon.generic_policy import installed_in
+
+    return installed_in(secagent.get_current_config())
 
 
 def _defence_is_active(suite) -> bool | None:

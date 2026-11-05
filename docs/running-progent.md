@@ -136,7 +136,14 @@ OPENAI_API_KEY=... ./scripts/run_ab.sh
 ```
 
 which is conditions A and B, three repeats each, followed by the analysis. Set
-`UPDATES=""` for the narrow-only configuration.
+`UPDATES=""` to switch policy updates off. That is the paper's Disable Update,
+not narrow-only: in the fork, `SECAGENT_ONLY_ALLOW_NARROW` acts only when updates
+run, so Auto-Deny needs `SECAGENT_UPDATE=True` as well (see
+`docs/generic-policy.md`). No published run used updates off.
+`run_condition.py --approver auto-approve|auto-deny|disable-update` sets the
+right variables for each of the paper's configurations and records the choice
+as `approver` in the run's provenance; `--policy-updates` remains as the older
+spelling of `auto-approve`.
 
 Repeats use `force_rerun=True` and a separate log directory per repeat, because
 AgentDojo caches by default and three repeats reading one cache is one repeat.

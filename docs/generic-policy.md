@@ -65,8 +65,10 @@ In Progent's own format, as forbid rules at priority 10 with fallback 0:
     UNTRUSTED = {"type": "string", "not": {"enum": [the four payees]}}
 
 Progent sorts a tool's rules by priority, keeps rules below 100 across its
-per-task resets, and writes the model's initial task policy at 100, so these
-rules are evaluated first and survive between tasks. Fallback 0 refuses the call
+per-task resets, and writes the model's initial task policy at 100. Its updates
+also remove and rewrite only the rules at 100 (`generate_security_policy` and
+`generate_update_security_policy` in `secagent/tool.py`), so these rules are
+evaluated first and survive between tasks and across updates. Fallback 0 refuses the call
 and returns the reason to the agent. Fallback 2, which asks the user, is never
 used: it reads standard input and would stall an unattended run.
 
@@ -78,12 +80,32 @@ Two checks are made on every run rather than assumed:
 
 - **Every policy installed during the run still carries these rules.** The log
   records each installed policy, and `geryon.policies` reads them.
-- **No call runs with no policy set.** When no policy is set Progent lets the
-  call through, so a single "security policy is not set" line in the log
-  invalidates the run.
+- **No call of the agent runs with no policy set.** When no policy is set
+  Progent lets the call through. The benchmark itself does this once per user
+  task: before attacking it, the vendored AgentDojo runs the task's reference
+  solution to find where the injections land, with the policy cleared and then
+  restored (`get_injection_candidates` in `agentdojo/attacks/base_attacks.py`).
+  Those calls are not the agent's and are not counted. A "security policy is
+  not set" line outside such a pass invalidates the run, and so does a pass that
+  no restored policy closes. In a recorded run of condition B on banking
+  (`results/runs-full-set/banking-B-r1.log.gz`) all 33 such lines fall inside
+  the 16 passes, one per user task.
 
-The patch that installs the rules into Progent's AgentDojo suite will be
-published before the runs, and each run's provenance will record it.
+`scripts/patch_progent_generic_policy.py` adds a hook to Progent's banking
+suite, right after it allows the read-only tools: when `GERYON_GENERIC_POLICY` is
+`True`, the suite installs these rules into Progent's policy, keeping every rule
+already there. Without the variable the hook does nothing.
+`run_condition.py --generic-policy` sets it before AgentDojo is imported,
+refuses to start unless the rules are then in Progent's policy, and records the
+result as `generic_policy` in the run's provenance.
+
+`scripts/check_generic_policy.py` lets Progent itself decide six test calls
+before anything is spent, with a task policy that allows every money-moving tool
+outright, the most permissive one the model could write. On Progent's fork at
+`b02783b` it refuses the payment and the scheduled update to the attacker and
+the password change; it allows the payment to a trusted payee, the scheduled
+update that keeps its recipient and the profile change; and the rules are still
+there after Progent's per-task reset.
 
 ## What it should do, before any run
 
@@ -116,12 +138,43 @@ pairs are a subset and are reported separately.
 | A | none | |
 | B | Progent as shipped | Auto-Approve |
 | B + generic | Progent with the policy above | Auto-Approve |
-| B + Auto-Deny | Progent with `SECAGENT_ONLY_ALLOW_NARROW=True` | which we take to be Auto-Deny |
+| B + Auto-Deny | Progent with `SECAGENT_UPDATE=True` and `SECAGENT_ONLY_ALLOW_NARROW=True` | which we take to be Auto-Deny |
+
+In Progent's AgentDojo fork, policy updates run only when `SECAGENT_UPDATE` is
+`"True"`, and `SECAGENT_ONLY_ALLOW_NARROW` is read inside the update, so it has
+no effect on its own. With updates off the configuration is the paper's Disable
+Update, not Auto-Deny.
 
 A and B repeat the August measurement on the new commit, so that a difference
 between commits is not read as a difference between configurations. Whether
 `SECAGENT_ONLY_ALLOW_NARROW` is the paper's Auto-Deny has been put to the
 authors on progent#3.
+
+## Running it
+
+Inside Progent's environment at `b02783b`, with the Bedrock patches of
+`docs/running-progent.md` and the generic-policy hook applied:
+
+    python scripts/patch_progent_generic_policy.py
+    python scripts/check_generic_policy.py
+
+then, for each repeat r in 1, 2, 3 and each configuration, one process:
+
+    common="--suite banking --all-pairs --pairs results/pairs-fork-v1.2.json --repeat $r"
+    python scripts/run_condition.py $common --condition A --out-dir results/runs-fair-test/A
+    python scripts/run_condition.py $common --condition B --approver auto-approve \
+        --out-dir results/runs-fair-test/auto-approve
+    python scripts/run_condition.py $common --condition B --approver auto-approve --generic-policy \
+        --out-dir results/runs-fair-test/generic
+    python scripts/run_condition.py $common --condition B --approver auto-deny \
+        --out-dir results/runs-fair-test/auto-deny
+
+Every run of the generic configuration is then checked from its log, and one
+that fails is reported as invalid, not quietly dropped:
+
+    for r in 1 2 3; do
+        python -m geryon.generic_policy --check-log results/runs-fair-test/generic/banking-B-r$r.log.gz
+    done
 
 ## What is not measured
 

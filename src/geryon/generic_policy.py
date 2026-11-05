@@ -44,7 +44,9 @@ What it is expected to do
 from __future__ import annotations
 
 import argparse
+import gzip
 from dataclasses import dataclass
+from pathlib import Path
 
 #: Recipients of the account's own outgoing and scheduled payments in AgentDojo's
 #: default banking environment, read before any task runs. Asserted against the
@@ -99,6 +101,82 @@ def refused(function: str, args: dict) -> bool:
     return False
 
 
+#: Read by the patched banking suite at import time, like Progent's own variables.
+#: ``scripts/patch_progent_generic_policy.py`` adds the hook; ``run_condition.py
+#: --generic-policy`` sets the variable and checks the rules are in force.
+ENABLE_VARIABLE = "GERYON_GENERIC_POLICY"
+#: What Progent prints when a tool call arrives and no policy is set. It then lets
+#: the call through.
+NOT_SET_LINE = "security policy is not set"
+
+
+def installed_in(policy: dict | None) -> bool:
+    """Whether every generic rule is present in a Progent policy."""
+    if not policy:
+        return False
+    return all(rule in policy.get(tool, []) for tool, rules in progent_rules().items() for rule in rules)
+
+
+def install_into_progent() -> dict:
+    """Add the generic rules to Progent's current policy, keeping every rule already there."""
+    import secagent
+
+    policy = {tool: list(rules) for tool, rules in (secagent.get_current_config() or {}).items()}
+    for tool, rules in progent_rules().items():
+        current = policy.setdefault(tool, [])
+        current.extend(rule for rule in rules if rule not in current)
+    secagent.update_security_policy(policy)
+    return policy
+
+
+@dataclass
+class LogCheck:
+    """What a run's log says about the generic rules."""
+
+    policies: int
+    without_rules: int
+    unset_calls: int
+    reference_passes: int = 0
+    unrestored: int = 0
+
+    @property
+    def valid(self) -> bool:
+        return self.policies > 0 and not (self.without_rules or self.unset_calls or self.unrestored)
+
+
+def check_log(path: Path) -> LogCheck:
+    """Every installed policy must carry the generic rules, and no agent call may run with none set.
+
+    Before attacking a user task, the vendored AgentDojo runs the task's reference
+    solution to find where the injections land, with Progent's policy cleared and
+    then restored (``get_injection_candidates`` in ``agentdojo/attacks/base_attacks.py``).
+    The log shows ``security policy updated: None``, a "not set" warning for each
+    reference call, then the restored policy. Those calls are the benchmark's, not
+    the agent's, so warnings inside such a pass are not counted. A warning outside
+    one is, and so is a pass that no restored policy closes.
+    """
+    from geryon.policies import MARKER, read_policies
+
+    installed = [policy for policy in read_policies(path) if policy is not None]
+    without = sum(not installed_in(policy) for policy in installed)
+    passes = unset = unrestored = 0
+    cleared = False
+    opener = gzip.open if path.suffix == ".gz" else open
+    with opener(path, "rt", errors="replace") as handle:
+        for line in handle:
+            if line.startswith(MARKER):
+                clearing = line[len(MARKER):].strip() == "None"
+                if clearing:
+                    passes += 1
+                    unrestored += cleared  # cleared again before any policy was restored
+                cleared = clearing
+            elif NOT_SET_LINE in line and not cleared:
+                unset += 1
+    unrestored += cleared
+    return LogCheck(policies=len(installed), without_rules=without, unset_calls=unset,
+                    reference_passes=passes, unrestored=unrestored)
+
+
 def trusted_payees(environment) -> tuple[str, ...]:
     """Recipients of the account's own outgoing and scheduled payments."""
     account = environment.bank_account
@@ -148,7 +226,17 @@ def preanalysis(version: str = "v1.2") -> Preanalysis:
 def main() -> int:
     ap = argparse.ArgumentParser(description="Check the generic policy against the reference solutions.")
     ap.add_argument("--version", default="v1.2", help="AgentDojo benchmark version (Progent's fork is v1.2)")
+    ap.add_argument("--check-log", type=Path, metavar="LOG",
+                    help="instead, check that a run's log kept the generic rules in force throughout")
     args = ap.parse_args()
+    if args.check_log:
+        result = check_log(args.check_log)
+        print(f"policies installed: {result.policies}, without the generic rules: {result.without_rules}")
+        print(f"reference passes with the policy cleared: {result.reference_passes}, "
+              f"not closed by a restored policy: {result.unrestored}")
+        print(f"calls made with no policy set, outside those passes: {result.unset_calls}")
+        print("valid" if result.valid else "NOT VALID: the generic rules were not in force for the whole run")
+        return 0 if result.valid else 1
     result = preanalysis(args.version)
     print("generic policy, as Progent rules:")
     for tool, rules in progent_rules().items():

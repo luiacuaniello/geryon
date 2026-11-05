@@ -42,7 +42,9 @@ DEFAULT_SUITES = ("banking", "slack", "travel", "workspace")
 #: legitimately varies when pooling, and is checked per group instead.
 SHARED_PROVENANCE = ("benchmark_version", "agent_model")
 #: Checked only across the defended conditions, since condition A has no defence.
-DEFENCE_PROVENANCE = ("policy_model", "policy_updates_permitted")
+#: "approver" and "generic_policy" are absent from runs before November 2026, which
+#: read as None and so refuse to pool with runs that record them.
+DEFENCE_PROVENANCE = ("policy_model", "policy_updates_permitted", "approver", "generic_policy")
 
 
 def load_runs(run_dir: Path, suite: str) -> dict[str, list[dict]]:
@@ -207,7 +209,9 @@ def main() -> int:
     for r in (r for rs in pooled.values() for r in rs):
         if r["provenance"]["condition"] in ("B", "C"):
             print(f"defence: policy model {r['provenance']['policy_model']}, "
-                  f"policy updates permitted: {r['provenance']['policy_updates_permitted']}")
+                  f"policy updates permitted: {r['provenance']['policy_updates_permitted']}, "
+                  f"approver: {r['provenance'].get('approver')}, "
+                  f"generic policy: {r['provenance'].get('generic_policy')}")
             break
 
     for suite, runs in sorted(per_suite.items()):
