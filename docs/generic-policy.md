@@ -150,6 +150,23 @@ same at both commits. Auto-Deny at `b02783b` would measure a check its authors
 had already corrected before our runs. All four configurations therefore run at
 `0d7ea07`, and `scripts/setup_env.sh` pins it.
 
+**Amended again on 18 November 2026, after the first run and before any of its
+results was read.** The second process, Auto-Approve repeat 1, ended after an
+hour: the agent model returned a tool call whose arguments were not valid JSON,
+and AgentDojo's own loop does not catch that exception. From then on every run
+uses `run_condition.py --per-pair`, which runs each pair as that loop does (the
+same reset of Progent's policy before each user task, the same per-pair log, the
+same handling of the three API errors the loop absorbs) but skips a pair that
+raises any other exception instead of ending the run. A skipped pair is not a
+blocked attack. It is left out of every configuration, so that each comparison
+stays paired, and listed with the reason; if more than 7 of the 144 are left
+out, the runs are not reported until the ones that skipped them are repeated.
+The completed run, A repeat 1, made in AgentDojo's own loop, is kept, since the
+two modes score a pair the same way. The aborted run is kept, unread, in
+`results/runs-fair-test-aborted/`. A nine-pair calibration (one user task, the
+generic configuration), run outside `results/` to check that `--per-pair` writes
+its logs, is not part of the results.
+
 | | defence | approver |
 |---|---|---|
 | A | none | |

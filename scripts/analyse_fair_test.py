@@ -53,6 +53,10 @@ COMPARISONS = (
 #: pre-analysis in docs/generic-policy.md. tests/test_analyse_fair_test.py keeps
 #: the two in step.
 REFUSED_USER_TASKS = ("user_task_0", "user_task_5", "user_task_11", "user_task_14", "user_task_15")
+#: Pairs a run skipped (a model reply AgentDojo cannot parse) are left out of every
+#: configuration, so that every comparison stays paired; beyond this many the runs
+#: are not reported until the affected ones are repeated.
+MAX_LEFT_OUT = 7
 #: The August measurement at Progent commit 8a8eb89, which A and auto-approve repeat.
 EARLIER = RESULTS / "runs-full-set"
 READINGS = ("intended", "recorded")
@@ -92,7 +96,8 @@ def problems(configurations: dict[str, list[dict]], all_pairs: set[str],
                 found.append(f"{path}: defence_active is {p['defence_active']}")
             if not str(p.get("benchmark_repo_commit") or "").startswith(PROGENT_COMMIT):
                 found.append(f"{path}: Progent commit {p.get('benchmark_repo_commit')}, not {PROGENT_COMMIT}")
-            if {f"{SUITE}/{pair}" for pair in run["security"]} != all_pairs:
+            accounted = set(run["security"]) | set(p.get("skipped_pairs") or {})
+            if {f"{SUITE}/{pair}" for pair in accounted} != all_pairs:
                 found.append(f"{path}: not the {len(all_pairs)} {SUITE} pairs of the pairs file")
     for field in SHARED_PROVENANCE:
         values = {str(run["provenance"].get(field)) for run in everything}
@@ -102,6 +107,9 @@ def problems(configurations: dict[str, list[dict]], all_pairs: set[str],
     models = {str(run["provenance"].get("policy_model")) for run in defended}
     if len(models) > 1:
         found.append(f"defended runs disagree on the policy model: {sorted(models)}")
+    if len(left_out(configurations)) > MAX_LEFT_OUT:
+        found.append(f"{len(left_out(configurations))} pairs skipped by some run, more than {MAX_LEFT_OUT}: "
+                     "repeat the runs that skipped them")
     for run in configurations["generic"]:
         log = Path(run["_path"]).with_suffix(".log.gz")
         if not log.exists():
@@ -109,6 +117,12 @@ def problems(configurations: dict[str, list[dict]], all_pairs: set[str],
         elif not check_log(log).valid:
             found.append(f"{log}: fails python -m geryon.generic_policy --check-log")
     return found
+
+
+def left_out(configurations: dict[str, list[dict]]) -> set[str]:
+    """Every pair some run skipped, keyed as collapse() keys them."""
+    return {f"{SUITE}/{pair}" for runs in configurations.values() for run in runs
+            for pair in run["provenance"].get("skipped_pairs") or {}}
 
 
 def scored(runs: list[dict], reading: str) -> list[dict]:
@@ -232,6 +246,12 @@ def main() -> int:
             print(f"  - {problem}")
         if not args.allow_incomplete:
             return 1
+    skipped = left_out(configurations)
+    if skipped:
+        print(f"left out of every configuration, because some run skipped them: {len(skipped)} pairs")
+        for pair in sorted(skipped):
+            print(f"  {pair}")
+        sets = {name: pairs - skipped for name, pairs in sets.items()}
     try:
         report(configurations, sets)
         if EARLIER.is_dir():

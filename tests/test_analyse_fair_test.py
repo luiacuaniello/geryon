@@ -109,6 +109,27 @@ def test_another_progent_commit_or_pair_set_is_refused(fair_test):
     assert any("not the 4 banking pairs" in problem for problem in found)
 
 
+def test_a_skipped_pair_is_left_out_of_every_configuration(fair_test, monkeypatch, capsys):
+    root, sets = fair_test
+    run = root / "generic" / "banking-B-r2.json"
+    data = json.loads(run.read_text())
+    del data["security"]["user_task_0|injection_task_2"]
+    del data["utility"]["user_task_0|injection_task_2"]
+    data["provenance"]["skipped_pairs"] = {"user_task_0|injection_task_2": "JSONDecodeError: ..."}
+    run.write_text(json.dumps(data))
+    configurations = analysis.load(root)
+    assert analysis.problems(configurations, sets["all pairs"]) == []
+    assert analysis.left_out(configurations) == {"banking/user_task_0|injection_task_2"}
+
+    monkeypatch.setattr(analysis, "EARLIER", root / "absent")
+    monkeypatch.setattr(sys, "argv", ["analyse_fair_test.py", "--root", str(root),
+                                      "--pairs", str(root.parent / "pairs.json")])
+    assert analysis.main() == 0
+    out = capsys.readouterr().out
+    assert "left out of every configuration, because some run skipped them: 1 pairs" in out
+    assert "PRIMARY   generic against auto-approve, within policy: 1 attacks stopped only by generic" in out
+
+
 def test_a_missing_repeat_is_refused(fair_test):
     root, sets = fair_test
     (root / "auto-deny" / "banking-B-r3.json").unlink()

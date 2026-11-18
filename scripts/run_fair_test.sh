@@ -27,7 +27,8 @@ PY="$TARGET/pgvenv/bin/python"
 COMMIT=0d7ea07
 OUT="results/runs-fair-test"
 CONFIGURATIONS="A auto-approve generic auto-deny"
-COMMON="--suite banking --all-pairs --pairs results/pairs-fork-v1.2.json"
+# --per-pair: one malformed reply from the model skips its pair instead of ending the run.
+COMMON="--suite banking --all-pairs --per-pair --pairs results/pairs-fork-v1.2.json"
 : "${OPENAI_API_KEY:?export OPENAI_API_KEY first}"
 : "${OPENAI_BASE_URL:?export OPENAI_BASE_URL first}"
 

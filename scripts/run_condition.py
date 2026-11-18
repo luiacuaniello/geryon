@@ -105,22 +105,59 @@ def run_pair_by_pair(suite, attack, user_tasks, injection_tasks, wanted, logdir,
     not a blocked attack and must never be counted as one — it changes the
     denominator, so it is reported and the caller decides whether the run is still
     usable.
+
+    Everything else is done as AgentDojo's own loop does it, so that a pair scores
+    the same either way (run_task_with_injection_tasks in agentdojo/benchmark.py):
+    Progent's policy is reset before each user task, each pair runs inside a
+    TraceLogger, which writes the per-pair log the re-scoring scripts read, and
+    the three API errors that loop absorbs are absorbed the same way, as utility
+    False and security True.
     """
+    from agentdojo import benchmark as loop
+    from agentdojo.logging import Logger, TraceLogger
+
+    reset = getattr(loop, "reset_security_policy", lambda: None)  # only Progent's fork has it
+    pipeline = _pipeline_of(attack)
     security, utility, skipped = {}, {}, {}
+    current_user = None
     with OutputLogger(str(logdir), live=None):
         for user_id, injection_id in sorted(wanted):
             key = f"{user_id}|{injection_id}"
+            if user_id != current_user:
+                reset()
+                current_user = user_id
             user_task = suite.user_tasks[user_id]
             injection_task = suite.injection_tasks[injection_id]
             injections = attack.attack(user_task, injection_task)
-            try:
-                util, sec = suite.run_task_with_pipeline(
-                    _pipeline_of(attack), user_task, injection_task, injections
-                )
-            except Exception as exc:  # noqa: BLE001 - one pair, not the run
-                skipped[key] = f"{type(exc).__name__}: {str(exc)[:120]}"
-                print(f"  SKIPPED {key}: {skipped[key]}", flush=True)
-                continue
+            with TraceLogger(
+                delegate=Logger.get(),
+                suite_name=suite.name,
+                user_task_id=user_id,
+                injection_task_id=injection_id,
+                injections=injections,
+                attack_type=attack.name,
+                pipeline_name=pipeline.name,
+            ) as logger:
+                try:
+                    util, sec = suite.run_task_with_pipeline(pipeline, user_task, injection_task, injections)
+                except loop.BadRequestError as exc:
+                    if exc.code != "context_length_exceeded" and exc.param != "max_tokens":
+                        skipped[key] = f"{type(exc).__name__}: {str(exc)[:120]}"
+                    util, sec = False, True
+                except (loop.ApiError, loop.InternalServerError) as exc:
+                    if isinstance(exc, loop.ApiError) and "internal server error" not in str(exc):
+                        skipped[key] = f"{type(exc).__name__}: {str(exc)[:120]}"
+                    util, sec = False, True
+                except Exception as exc:  # noqa: BLE001 - one pair, not the run
+                    skipped[key] = f"{type(exc).__name__}: {str(exc)[:120]}"
+                if key not in skipped and attack.is_dos_attack:
+                    sec = not util
+                if key in skipped:
+                    logger.log_error(f"skipped: {skipped[key]}")
+                    print(f"  SKIPPED {key}: {skipped[key]}", flush=True)
+                    continue
+            logger.set_contextarg("utility", util)
+            logger.set_contextarg("security", sec)
             security[key] = bool(sec)
             utility[key] = bool(util)
     return security, utility, skipped
@@ -163,8 +200,10 @@ def git_dirty(path: Path) -> bool | None:
     """Whether the working tree carries changes the commit does not describe.
 
     A hash beside a dirty tree names the wrong code, so the two travel together.
+    Run outputs under a top-level results/ do not count: every run writes there,
+    and they would otherwise mark each run after the first as dirty.
     """
-    status = _git(path, "status", "--porcelain")
+    status = _git(path, "status", "--porcelain", "--", ":/", ":(top,exclude)results")
     return None if status is None else bool(status)
 
 
@@ -456,6 +495,7 @@ def _run(args, log_path) -> int:
         "geryon_commit": git_commit(repo),
         "geryon_dirty": git_dirty(repo),
         "pair_count": len(pairs),
+        "per_pair": bool(args.per_pair),
         "calibration_only": bool(args.limit_user_tasks),
         "within_policy_only": not args.all_pairs,
         "pairs_file": args.pairs,
