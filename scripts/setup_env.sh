@@ -14,6 +14,10 @@
 #
 #   ./scripts/setup_env.sh [target-directory]
 #
+# Progent is checked out at PROGENT_COMMIT, the commit docs/generic-policy.md
+# fixes. To rebuild the environment of the runs before November 2026, use a new
+# target directory and PROGENT_COMMIT=8a8eb894b9d568a32b4e58252fea85b47f789c77.
+#
 # Then, for every run:
 #   export OPENAI_API_KEY="$(cat ~/.bedrock-key)"
 #   export OPENAI_BASE_URL="https://bedrock-mantle.eu-west-1.api.aws/v1"
@@ -24,23 +28,33 @@ set -euo pipefail
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TARGET="${1:-${GERYON_ENV:-$HOME/.geryon-env}}"
 PROGENT_URL="https://github.com/sunblaze-ucb/progent.git"
+PROGENT_COMMIT="${PROGENT_COMMIT:-0d7ea074d5e4b106997ebd56dfa1104c39945c03}"
 
 say() { printf '\n== %s\n' "$*"; }
 
 say "target: $TARGET"
 mkdir -p "$TARGET"
 
-# 1. The defence, which vendors its own copy of the benchmark. Pinned by nothing
-#    upstream: the repository carries no tags and no LICENSE, so the commit that
-#    was used is recorded in results/ alongside every run instead.
+# 1. The defence, which vendors its own copy of the benchmark. The repository
+#    carries no tags, so the commit is pinned here, and every run records the one
+#    it used in results/. A clone already present at another commit is refused
+#    rather than moved, because it carries this project's patches.
 if [ -f "$TARGET/progent/agentdojo/src/agentdojo/__init__.py" ]; then
   echo "  progent already present"
 else
-  say "cloning progent"
+  say "fetching progent at ${PROGENT_COMMIT:0:7}"
   rm -rf "$TARGET/progent"
-  git clone --depth 1 "$PROGENT_URL" "$TARGET/progent"
+  git init -q "$TARGET/progent"
+  git -C "$TARGET/progent" remote add origin "$PROGENT_URL"
+  git -C "$TARGET/progent" fetch -q --depth 1 origin "$PROGENT_COMMIT"
+  git -C "$TARGET/progent" checkout -q FETCH_HEAD
 fi
-echo "  commit: $(git -C "$TARGET/progent" rev-parse --short HEAD 2>/dev/null || echo unknown)"
+ACTUAL="$(git -C "$TARGET/progent" rev-parse HEAD 2>/dev/null || echo unknown)"
+echo "  commit: ${ACTUAL:0:7}"
+if [ "$ACTUAL" != "$PROGENT_COMMIT" ]; then
+  echo "  Progent is at ${ACTUAL:0:7}, not ${PROGENT_COMMIT:0:7}: use a new target directory" >&2
+  exit 1
+fi
 
 # 2. A virtualenv holding the fork, the defence, and this package. Python 3.11:
 #    the fork does not build on 3.12+.

@@ -13,7 +13,7 @@ spec = importlib.util.spec_from_file_location(
 patcher = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(patcher)
 
-#: The end of the vendored banking task_suite.py at Progent commits 8a8eb89 and b02783b.
+#: The end of the vendored banking task_suite.py at Progent commits 8a8eb89, b02783b and 0d7ea07.
 SUITE_TAIL = '''import os
 
 suite = os.getenv('SECAGENT_SUITE', None)

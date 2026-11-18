@@ -38,7 +38,7 @@ def write_configuration(root: Path, name: str, successes: set[str], rules_held: 
             "condition": condition, "suite": "banking", "repeat": repeat, "benchmark_version": "v1.2",
             "agent_model": "agent", "policy_model": "policy" if condition == "B" else None,
             "approver": approver, "generic_policy": generic, "defence_active": condition == "B",
-            "benchmark_repo_commit": "b02783b" + "0" * 33,
+            "benchmark_repo_commit": analysis.PROGENT_COMMIT + "0" * 33,
         }
         security = {f"{u}|{i}": f"{u}|{i}" in successes for u, i, _ in PAIRS}
         run = {"provenance": provenance, "security": security, "utility": dict.fromkeys(security, True)}

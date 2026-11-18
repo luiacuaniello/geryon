@@ -33,7 +33,7 @@ from rescore_agentdojo_240 import ReconstructionError, rescore_run
 ROOT = Path(__file__).resolve().parent.parent
 RESULTS = ROOT / "results"
 SUITE = "banking"
-PROGENT_COMMIT = "b02783b"
+PROGENT_COMMIT = "0d7ea07"
 
 #: Directory under the root, and the (condition, approver, generic policy) its runs must record.
 CONFIGURATIONS = {

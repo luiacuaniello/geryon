@@ -110,7 +110,7 @@ result as `generic_policy` in the run's provenance.
 `scripts/check_generic_policy.py` lets Progent itself decide six test calls
 before anything is spent, with a task policy that allows every money-moving tool
 outright, the most permissive one the model could write. On Progent's fork at
-`b02783b` it refuses the payment and the scheduled update to the attacker and
+`b02783b`, and again at `0d7ea07`, it refuses the payment and the scheduled update to the attacker and
 the password change; it allows the payment to a trusted payee, the scheduled
 update that keeps its recipient and the profile change; and the rules are still
 there after Progent's per-task reset.
@@ -137,9 +137,18 @@ tasks. The runs measure how near, and how much.
 
 ## The configurations
 
-All 144 banking pairs at Progent commit `b02783b`, three repeats each, with
+All 144 banking pairs at Progent commit `0d7ea07`, three repeats each, with
 `gpt-oss-120b` as both agent and policy model as before. The 42 within-policy
 pairs are a subset and are reported separately.
+
+**Amended 18 November 2026, before any run.** This plan first fixed commit
+`b02783b`. On 16 November the authors pushed `0d7ea07`, which changes only
+`secagent/policy_analysis.py`: the check that decides whether a policy update is
+a narrowing. Progent calls that check only when `SECAGENT_ONLY_ALLOW_NARROW` is
+set, that is only under Auto-Deny, so the other three configurations behave the
+same at both commits. Auto-Deny at `b02783b` would measure a check its authors
+had already corrected before our runs. All four configurations therefore run at
+`0d7ea07`, and `scripts/setup_env.sh` pins it.
 
 | | defence | approver |
 |---|---|---|
@@ -164,7 +173,7 @@ policy, and can approve legitimate expansions.
 
 `scripts/analyse_fair_test.py` applies it, and reports nothing unless every run
 is what its directory says. Each run must record the condition, approver and
-generic policy of its configuration and Progent commit `b02783b`. All runs must
+generic policy of its configuration and Progent commit `0d7ea07`. All runs must
 share the agent, policy model and benchmark version and cover the same 144
 pairs, with three repeats each. Every run of the generic policy needs a log that
 passes `--check-log`. A run that fails any of these is reported as invalid, not
@@ -202,13 +211,23 @@ labelled exploratory.
 
 ## Running it
 
-Inside Progent's environment at `b02783b`, with the Bedrock patches of
-`docs/running-progent.md` and the generic-policy hook applied:
+`scripts/run_fair_test.sh` does all of what follows, in this order, and skips
+any run whose file already exists, so an interrupted session can be resumed:
+
+    ./scripts/setup_env.sh ~/.geryon-env-0d7ea07
+    export OPENAI_API_KEY="$(cat ~/.bedrock-key)"
+    export OPENAI_BASE_URL="https://bedrock-mantle.eu-west-1.api.aws/v1"
+    ./scripts/run_fair_test.sh ~/.geryon-env-0d7ea07
+
+Step by step: inside Progent's environment at `0d7ea07`, with the Bedrock
+patches of `docs/running-progent.md` and the generic-policy hook applied,
 
     python scripts/patch_progent_generic_policy.py
     python scripts/check_generic_policy.py
 
-then, for each repeat r in 1, 2, 3 and each configuration, one process:
+then a dry run of every configuration, which calls no model, and then for each
+repeat r in 1, 2, 3 and each configuration, one process, so that a drift over
+the day does not fall on one configuration alone:
 
     common="--suite banking --all-pairs --pairs results/pairs-fork-v1.2.json --repeat $r"
     python scripts/run_condition.py $common --condition A --out-dir results/runs-fair-test/A

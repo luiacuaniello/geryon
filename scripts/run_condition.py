@@ -469,7 +469,7 @@ def _run(args, log_path) -> int:
         print(json.dumps(provenance, indent=2))
         print(f"\nwould run {len(user_tasks)} x {len(injection_tasks)} = "
               f"{len(user_tasks) * len(injection_tasks)} benchmark runs, "
-              f"then keep the {len(pairs)} within-policy pairs")
+              f"then keep the {len(pairs)} {'' if args.all_pairs else 'within-policy '}pairs")
         return 0
 
     meter = install_usage_meter()

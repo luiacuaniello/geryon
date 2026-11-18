@@ -39,17 +39,20 @@ class of mismatch fails before any money is spent rather than halfway through.
 ### Upstream changes since these runs
 
 Every run in `results/` used commit `8a8eb89` (2026-05-14), which each run file
-records as `benchmark_repo_commit`. Upstream has moved twice since:
+records as `benchmark_repo_commit`. Upstream has moved three times since:
 
 | commit | date | what it touches |
 |---|---|---|
 | `5be7b63` | 2026-09-24 | adds the MIT `LICENSE` |
 | `b02783b` | 2026-10-26 | `secagent/policy_analysis.py` and `secagent/role_analyzer.py`: the SMT-based policy analysis, which the authors describe as the check every update goes through |
+| `0d7ea07` | 2026-11-16 | `secagent/policy_analysis.py` only: the subset check fails closed on schema keywords it does not translate (sunblaze-ucb/progent#5) |
 
 The second commit is titled "fix" and does not reference our report, so nothing
-here says whether the two are related. No run has been repeated on it. A new run
-should pin the commit it uses, as `run_condition.py` already records, and say
-which numbers it can and cannot be compared with.
+here says whether the two are related. Progent calls the subset check that the
+third changes only under `SECAGENT_ONLY_ALLOW_NARROW`. A new run should pin the
+commit it uses, as `run_condition.py` already records and `setup_env.sh` now
+does, and say which numbers it can and cannot be compared with. The runs of
+`docs/generic-policy.md` use `0d7ea07`.
 
 One more piece of luck worth recording: Progent's own README documents a scoring
 error on slack `injection_task_5`, where a blocked call still appears in the trace
