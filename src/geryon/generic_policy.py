@@ -1,9 +1,11 @@
-"""A generic policy for Progent on AgentDojo's banking suite: the fair test the authors asked for.
+"""A generic policy for Progent on AgentDojo's banking suite, written by us.
 
-What the authors asked for
-    In sunblaze-ucb/progent#3 the authors name two mitigations for the failure this
-    project reports: a generic policy that constrains sensitive tools, and manual
-    approval of every expansion. Their paper (arXiv:2504.11703, v3, section 7)
+The mitigations it follows
+    In sunblaze-ucb/progent#3 the authors pointed to two mitigations in their paper
+    for the failure this project reports: a generic policy that constrains
+    sensitive tools, and manual approval of the initial policy and of every
+    expansion. They did not ask for this test or specify it, and how a generic
+    policy is written is up to its user. Their paper (arXiv:2504.11703, v3, section 7)
     defines generic policies as rules written by hand, fixed for the whole run, and
     evaluated before the task-specific policy the model writes, so that nothing the
     model writes can lift them. Its AgentDojo runs install none beyond allowing

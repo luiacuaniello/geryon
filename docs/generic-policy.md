@@ -1,12 +1,20 @@
-# A generic policy for the fair test
+# A generic policy, and the configurations measured next
 
 In [sunblaze-ucb/progent#3](https://github.com/sunblaze-ucb/progent/issues/3) the
-Progent authors named two mitigations for the failure this project reports: a
-generic policy that constrains sensitive tools, and manual approval of the
-initial policy and of every expansion. This file fixes, before any run, the
+Progent authors pointed to two mitigations in their paper for the failure this
+project reports: a generic policy that constrains sensitive tools, and manual
+approval of the initial policy and of every expansion. This file fixes, before any run, the
 policy, the configurations that will be measured and how they will be compared,
 so that the authors can object first. The runs will not start before 10 November 2026, and objections
 raised on progent#3 before then will be applied.
+
+The authors did not ask for this test or specify it: they pointed to the
+mitigations in their paper, and how a generic policy is written is up to its
+user. The policy below is ours. Every configuration is reported as that
+configuration and nothing else. Auto-Deny in particular is not Manual Approval
+and is not reported as a stand-in for it (progent#3, 16 November 2026). That
+reply came before any run, and raised no objection to the policy or to the
+configurations.
 
 ## What the paper says
 
@@ -138,7 +146,7 @@ pairs are a subset and are reported separately.
 | A | none | |
 | B | Progent as shipped | Auto-Approve |
 | B + generic | Progent with the policy above | Auto-Approve |
-| B + Auto-Deny | Progent with `SECAGENT_UPDATE=True` and `SECAGENT_ONLY_ALLOW_NARROW=True` | which we take to be Auto-Deny |
+| B + Auto-Deny | Progent with `SECAGENT_UPDATE=True` and `SECAGENT_ONLY_ALLOW_NARROW=True` | Auto-Deny |
 
 In Progent's AgentDojo fork, policy updates run only when `SECAGENT_UPDATE` is
 `"True"`, and `SECAGENT_ONLY_ALLOW_NARROW` is read inside the update, so it has
@@ -146,9 +154,11 @@ no effect on its own. With updates off the configuration is the paper's Disable
 Update, not Auto-Deny.
 
 A and B repeat the August measurement on the new commit, so that a difference
-between commits is not read as a difference between configurations. Whether
-`SECAGENT_ONLY_ALLOW_NARROW` is the paper's Auto-Deny has been put to the
-authors on progent#3.
+between commits is not read as a difference between configurations. The authors
+confirmed on progent#3 that `SECAGENT_ONLY_ALLOW_NARROW` is the paper's
+Auto-Deny: every generated initial policy is accepted and every expansion is
+rejected. Manual Approval differs in two ways: the user also reviews the initial
+policy, and can approve legitimate expansions.
 
 ## The analysis, fixed before any run
 

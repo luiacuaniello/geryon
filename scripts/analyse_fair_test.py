@@ -1,4 +1,4 @@
-"""The pre-registered analysis of the fair test in docs/generic-policy.md.
+"""The pre-registered analysis of the runs in docs/generic-policy.md.
 
     PYTHONPATH=src python scripts/analyse_fair_test.py
 

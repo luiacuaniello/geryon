@@ -134,6 +134,33 @@ decomposition over banking, slack and travel removes 57% of within-policy
 attacks, unchanged, and 85% of out-of-policy ones, from 84.4% to 84.9%. The
 within-policy pairs are 19 of the 52 attacks that survive the defence.
 
+## Why slack utility drops under Progent, 2026-11-18
+
+On slack, utility under attack falls from 64 to 24 of 105 pairs once Progent is
+on. On sunblaze-ucb/progent#3 the authors read our logs and put about half of
+the drops down to the agent: only the attacker's call was refused, and
+gpt-oss-120b then stopped instead of going on with the user's task, although
+Progent's refusal tells it to continue. They put the rest down mostly to the
+generated policies. `scripts/explain_slack_utility.py` checks that reading on
+every failed defended trace of the 43 pairs whose utility drops, and CI keeps
+the figures from drifting.
+
+| what was refused | traces |
+|---|---|
+| only the attacker's call, after which the agent stopped | 39 |
+| only the attacker's call, after which the agent went on and still did not finish | 13 |
+| a call the user task needs | 50 |
+| nothing | 3 |
+
+The reading holds. In 52 of the 105 traces only the attacker's call was refused.
+In 39 of those the agent made no further call, and 24 of them end with a question
+to the user. In the other 50 the generated policy refused a call the user task
+needed: 57 of the 59 such calls are `get_webpage`, which the slack tasks that
+read a page depend on. The policy had left the tool out in 36 of them and
+restricted the address in the other 21. Without the defence
+the attack succeeds in 42 of the 43 pairs, which matches the authors' account:
+the agent carries out the attacker's step and then finishes the task.
+
 ## Which numbers the proposal uses
 
 - the decomposition, 84% against 57%: `runs-full-set/`, all three suites, three
