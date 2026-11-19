@@ -32,8 +32,9 @@ retries is given up and the run carries on (3 times in that arm), with nothing
 returned to the caller.
 
 This is a defect in Progent, not in the models: its own code anticipates that
-open-weight models need the hint. The patch belongs upstream and has not been
-offered there yet.
+open-weight models need the hint. The patch belongs upstream; the defect was
+reported there on 2026-11-19, with this patch as a suggested fix:
+https://github.com/sunblaze-ucb/progent/issues/6
 
     python scripts/patch_progent_prompts.py           # apply
     python scripts/patch_progent_prompts.py --check   # report only
