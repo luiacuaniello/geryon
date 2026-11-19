@@ -5,7 +5,7 @@ be unusable, with the configuration of the run recorded beside it.
 
 ## Map of the directories
 
-Eleven directories, and three of them are traps. Read this before quoting any
+Thirteen directories, and four of them are traps. Read this before quoting any
 number out of them.
 
 | directory | what it is | usable? |
@@ -17,10 +17,12 @@ number out of them.
 | `runs-full-set-strong-agent/` | A and B over all 144 banking pairs with agent `qwen3-235b`, one repeat. Replicates the decomposition on a second agent model. | yes, one repeat |
 | `runs-strong-attacker/` | Condition C with attacker `qwen3-235b`, one repeat. Bounds the null result on adaptation with a second, larger attacker. | yes, one repeat |
 | `runs-strong-policy-fixed/` | B with policy model `qwen3-235b` **after** the prompt patch. One of the three policy-model configurations that exclude the confound. | yes, one repeat |
+| `runs-fair-test/` | **The generic-policy runs of `docs/generic-policy.md`**: A, Progent as shipped (Auto-Approve), Progent with a generic policy of ours, and Auto-Deny (`SECAGENT_ONLY_ALLOW_NARROW`, not Manual Approval), on all 144 banking pairs at Progent `0d7ea07`, three repeats each, 18–19 November 2026. Read them with `scripts/analyse_fair_test.py`, the pre-registered analysis. | yes |
 | `cmcp-pilot/` | The deployed MCP gateway pilot and its re-test. The original finding, that the gateway never gives its policy engine the call's arguments, is **withdrawn**: one added rule on the arguments refuses the attacker's payment. No inference cost. | **NO for the original claim** — read the note inside |
 | `logs/` | Raw stdout of early runs, gzipped. Holds the evidence for the Progent findings: 92 of the 250 policies the defence wrote contain the attacker's account number, and 91 name it as a permitted recipient (a structural reading). The log's other 20 policy lines are the benchmark's reference pass clearing and restoring the policy; see `logs/README.md`. | evidence, not measurements |
 | `runs-strong-policy/` | B with policy model `qwen3-235b` **before** the prompt patch, when 230 model replies failed to parse as JSON and were swallowed silently. (An earlier version also said 25 tool calls ran with no policy set: they are the benchmark's reference pass, not the agent's; see `logs/README.md`.) | **NO — kept as the record of the defect** |
 | `runs-claude-policy/` | An attempt to use `claude-sonnet-5` as the policy model. It never ran: the model is gated on this account and the endpoint rejected it. Only a log survives. | **NO — failed run** |
+| `runs-fair-test-aborted/` | Three runs of the `runs-fair-test/` series that did not finish: one ended by a malformed tool call, two stopped on purpose to pause the runs. Kept unread; see the note inside. | **NO — not part of any analysis** |
 
 The "NO" rows are kept rather than deleted because a defect that leaves no trace
 is a defect that gets rediscovered. Their numbers must not be quoted, and the
