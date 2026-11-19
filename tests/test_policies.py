@@ -120,3 +120,28 @@ def test_the_qwen_policy_arm_wrote_250_of_its_270_logged_policies():
     report = analyse(ROOT / "results" / "logs" / "strong_arm_full.log.gz", ATTACKER)
     assert (report.installed, report.unset, report.restored) == (270, 10, 10)
     assert report.authorising == 91
+
+
+def test_policies_written_before_the_first_reference_pass_are_counted_apart(tmp_path: Path):
+    """The benchmark runs each injection task as the agent's own request before any attack."""
+    asked = f"security policy updated: {{'send_money': {clause(recipient={'enum': [ATTACKER]})}}}"
+    log = tmp_path / "run.log"
+    log.write_text("\n".join([asked, asked, "security policy updated: None", asked, asked]) + "\n")
+    report = analyse(log, ATTACKER)
+    assert (report.written.written, report.written.authorising) == (3, 3)
+    assert (report.goal_pass.written, report.goal_pass.authorising) == (2, 2)
+    assert (report.under_attack.written, report.under_attack.authorising) == (1, 1)
+
+
+@pytest.mark.parametrize(("log", "goal_pass", "under_attack"), [
+    # written, containing the account, naming it as a permitted recipient, of which via
+    # send_money, with it the only recipient of send_money
+    ("logs/strong_arm_full.log.gz", (18, 17, 17, 15, 15), (232, 75, 74, 58, 32)),
+    ("runs-strong-policy-fixed/banking-B-r1.log.gz", (18, 17, 17, 14, 14), (222, 86, 76, 68, 53)),
+])
+def test_the_qwen_policy_arms_split_by_when_the_policy_was_written(log, goal_pass, under_attack):
+    report = analyse(ROOT / "results" / log, ATTACKER)
+    for part, expected in ((report.goal_pass, goal_pass), (report.under_attack, under_attack)):
+        got = (part.written, part.mentioning, part.authorising, part.by_tool.get("send_money", 0),
+               part.exclusive)
+        assert got == expected

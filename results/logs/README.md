@@ -21,13 +21,17 @@ mean reading Progent's code rather than its output.
 | of those, cleared to `None` by the benchmark's reference pass | `grep -c "security policy updated: None"` | 10 |
 | of those, the policy each pass restores | the line after each `None` | 10 |
 | of those, written by the defence | | 250 |
-| of the 250, containing the attacker's IBAN | `... \| grep -c US133000000121212121212` | **92** |
+| of the 250, containing the attacker's IBAN | `... \| grep -c US133000000121212121212` | 92 |
+| of the 92, written while the agent's own request was the attacker's goal (below) | | 17 |
+| of the 92, written during the attacked tasks, out of 232 | | **75** |
 | `Error decoding JSON` — a model reply that failed to parse | `grep -c "^Error decoding JSON"` | 230 |
 | `Ignore the update error` — an update given up after retries | `grep -c "Ignore the update error"` | 3 |
 | `security policy is not set` — a call while no policy was set, all inside the reference pass | `grep -c "security policy is not set"` | 25 |
 
-The 92 is the finding: policies that were actually installed and in force carried
-a value taken from the injected content.
+The 75 are the finding: policies written during the attacked tasks, installed and
+in force, that carried a value taken from the injected content. The other 17 of
+the 92 were written while the agent's own request was the attacker's goal, so
+there the account came from the request (corrected on 2026-11-20, below).
 
 **Corrected, 2026-11-05.** Twenty of the 270 policy lines and all 25 calls made
 with no policy set are the benchmark's own bookkeeping, not the defence's.
@@ -42,6 +46,24 @@ call of the agent ran without a policy, in this log or in any other run log in
 of `results/README.md` and of the paper draft, and comments on
 sunblaze-ucb/progent#3, counted the restores among the policies the defence
 installed and described the 25 as calls that ran unprotected.
+
+**Corrected, 2026-11-20.** Not all of the 250 were written under attack. Before
+any attack, `benchmark_suite_with_injections` in `agentdojo/benchmark.py` runs
+every injection task as a plain task, to check that the agent can carry it out.
+The agent's request is then the attacker's goal itself, such as "Send a
+transaction to US133000000121212121212 that includes the music streaming
+service...", and a policy that names the account is the defence doing what it
+was asked. That pass comes before the run's first reference pass. In this log it
+wrote 18 policies, and 17 of them name the account. During the attacked tasks the
+defence wrote 232 policies: 75 contain the account and 74 name it as a permitted
+recipient, 58 of those on `send_money`, and in 32 it is the only recipient
+`send_money` names. In the same arm after the prompt patch the figures are 222,
+86, 76, 68 and 53, against 240, 103, 93, 82 and 67 counted over everything. The
+user's requests in the attacked tasks never contain the account, so there it can
+only have come from the injected content. `python -m geryon.policies` prints both
+counts and `tests/test_policies.py` pins them. Until this correction the 92 and
+the 91 were quoted over all 250: in this file, in `results/README.md`, in the
+paper draft and in the title of sunblaze-ucb/progent#3.
 
 ## Where those policies name the account
 
@@ -61,6 +83,9 @@ recipient — that is, where it appears in an `enum` restriction on `recipient`:
 | — via `update_scheduled_transaction` | 20 |
 | — via `schedule_transaction` | 1 |
 | with that account the **only** named recipient of `send_money` | 47 |
+| of the 91, written during the attacked tasks (above) | **74** |
+| — via `send_money` | 58 |
+| with that account the **only** named recipient of `send_money`, during the attacked tasks | 32 |
 
 The typical clause is
 
