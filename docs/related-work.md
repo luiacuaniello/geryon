@@ -46,6 +46,13 @@ Two, and both must be read before believing this project has anything to add.
 
 ### AutoDojo (arXiv:2606.15057, June 2026, code public)
 
+**Revised on 2026-09-28** (v3, retitled *A Generative Benchmark for Evaluating
+Prompt Injection Defenses in LLM Agents*): ten defences, six suites across
+AgentDojo and AgentDyn, and CaMeL and ROPE now among the four system-level
+defences. Its Progent numbers below are unchanged in v3, and v3 states that
+Progent, DRIFT and ROPE do not show the action-open pattern. What follows was
+written from v2 and is kept as it was, with the one point v3 overturns marked.
+
 An adaptive extension of AgentDojo that uses a frontier LLM to iteratively
 optimise the injection against the specific defence. Nine defences, three suites,
 five target models. Against a filter that reduces static attack success to 0
@@ -67,7 +74,8 @@ has already answered the easy version of the question.
 2. Its second finding, that attack success is much higher on action-open tasks,
    is stated for prompt-level and filter-based defences. It is not established
    for the action-level class.
-3. CaMeL appears in its related work, not in its evaluation.
+3. CaMeL appears in its related work, not in its evaluation. *(No longer true
+   in v3, which evaluates it.)*
 4. Its measurement is over the whole pair set, in which more than half the pairs
    need a tool the user task never uses, which a tool-identity policy refuses by
    name. It does not report the restricted denominator.

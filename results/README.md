@@ -194,6 +194,16 @@ One pair of 349 was skipped in the whole campaign, in `travel-A-r2`, for a
 malformed model reply. It is absent from both numerator and denominator, which
 leaves 348.
 
+**The prompt patch is not recorded in the provenance.** `scripts/patch_progent_prompts.py`
+was applied on 2026-08-27 at 15:02 UTC, and every environment built since carries
+it, because `scripts/setup_env.sh` applies it. The defended runs started before
+then ran without it: B in `runs/`, C in `runs-condition-c/`, `banking-B-r1` in
+`runs-full-set/`, and `runs-strong-policy/`. Every defended run started after it
+ran with it, `runs-fair-test/` included. Condition A never calls the policy
+model, so the patch cannot touch it. With `gpt-oss-120b` writing the policy, the
+logs that were kept show between zero and five unparseable policy replies per
+run, with the patch and without (`grep -c "^Error decoding JSON"`).
+
 ## The two analyses
 
 **Pooled across suites is the primary one.** The threshold is a fixed number of
