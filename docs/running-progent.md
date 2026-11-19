@@ -102,9 +102,9 @@ Read out of Progent's own `run.sh` and `secagent/tool.py`:
 
 `SECAGENT_UPDATE` versus `SECAGENT_ONLY_ALLOW_NARROW` is not a detail: it is the
 experimental handle for attack family F4. **Run both.** A number from only the
-permissive setting describes that setting, not the defence. The configurations
-planned next, including a generic policy of our own and Auto-Deny, are in
-`docs/generic-policy.md`.
+permissive setting describes that setting, not the defence. The runs with a
+generic policy of our own and with Auto-Deny, at `0d7ea07`, and their results
+are in `docs/generic-policy.md`.
 
 Note also that the policy-authoring model defaults to a proprietary API model, so
 "no proprietary model required" holds for the agent under test and not for the

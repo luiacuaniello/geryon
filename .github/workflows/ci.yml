@@ -28,6 +28,10 @@ jobs:
         run: PYTHONPATH=src python scripts/rescore_slack_task5.py --decomposition
       - name: why slack utility drops under Progent, as quoted on progent#3
         run: PYTHONPATH=src python scripts/explain_slack_utility.py
+      - name: the generic-policy runs, analysed as docs/generic-policy.md fixed before any run
+        run: PYTHONPATH=src python scripts/analyse_fair_test.py
+      - name: the exploratory breakdown of those runs, as quoted in docs/generic-policy.md
+        run: PYTHONPATH=src python scripts/explore_fair_test.py
       - name: tests that do not need the benchmark
         run: PYTHONPATH=src python -m pytest tests/test_corpus.py tests/test_stats.py
 

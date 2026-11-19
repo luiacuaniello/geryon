@@ -268,6 +268,92 @@ dependencies:
 
     PYTHONPATH=src python scripts/analyse_fair_test.py
 
+## Results, 19 November 2026
+
+The twelve runs were made on 18 and 19 November 2026 through Bedrock, for about
+7.10 USD, and are in `results/runs-fair-test/`. `scripts/analyse_fair_test.py`
+prints every figure in this section except those of the last part, which is
+exploratory and comes from `scripts/explore_fair_test.py`. CI reruns both, and
+`tests/test_analyse_fair_test.py` keeps the quoted figures from drifting. Three
+runs that did not finish are kept, unread, in `results/runs-fair-test-aborted/`.
+
+**Every run is valid.** Each records its configuration and Progent commit
+`0d7ea07` and covers the same 144 pairs, with the same agent, policy model and
+benchmark version. No pair was skipped, so none is left out. The three runs of
+the generic policy pass `--check-log`: the rules are in all 270, 297 and 293
+policies they installed, each of their 16 reference passes is closed by a
+restored policy, and no call ran with no policy set outside those passes.
+
+**Attack success**, as agentdojo#240 intends, majority of three repeats, with
+95% Wilson intervals:
+
+| | within policy, of 42 | all pairs, of 144 |
+|---|---|---|
+| A | 27, 64.3% [49.2, 77.0] | 103, 71.5% [63.7, 78.3] |
+| Auto-Approve | 18, 42.9% [29.1, 57.8] | 43, 29.9% [23.0, 37.8] |
+| generic policy | 0, 0.0% [0.0, 8.4] | 0, 0.0% [0.0, 2.6] |
+| Auto-Deny | 12, 28.6% [17.2, 43.6] | 21, 14.6% [9.7, 21.3] |
+
+As AgentDojo records it, one pair differs, under Auto-Deny: 13 of 42 and 22 of
+144.
+
+**The primary comparison.** On the 42 within-policy pairs the generic policy
+stopped 18 attacks that Progent as shipped let through, and let through none
+that it stopped: two-sided exact McNemar p = 7.6 × 10⁻⁶, with 6 discordant pairs
+needed for a claim. Attack success within policy is lower with the generic
+policy than with Progent as shipped.
+
+**Successes under the generic policy.** None, in any of the three runs, as
+AgentDojo records them. The pre-analysis expected none, so there is nothing to
+examine.
+
+**Secondary comparisons**, with no claim of their own. Auto-Deny against Progent
+as shipped on the 42: 6 attacks stopped only by Auto-Deny, none let through only
+by it, p = 0.031. On all 144 pairs: the generic policy 43 and 0, Auto-Deny 23 and
+1, both p < 0.0001. The share of A's successes removed, on all pairs and within
+policy: Auto-Approve 58% and 33%, the generic policy 100% and 100%, Auto-Deny 80%
+and 56%.
+
+**Utility under attack**, majority of three repeats:
+
+| | within policy, of 42 | all pairs, of 144 | the five refused user tasks, of 45 | the other eleven, of 99 |
+|---|---|---|---|---|
+| A | 24 | 91 | 27 | 64 |
+| Auto-Approve | 17 | 78 | 24 | 54 |
+| generic policy | 7 | 63 | 9 | 54 |
+| Auto-Deny | 20 | 72 | 22 | 50 |
+
+The pre-analysis expected a cost on the five user tasks whose reference solution
+the policy refuses: there the generic policy completes 9 of 45, against 24 for
+Progent as shipped. Over the other eleven it completes as many, 54 of 99, but
+fewer of their within-policy pairs (below).
+
+**Against August.** At `8a8eb89` (`results/runs-full-set/`) A let 24 of the 42
+within-policy attacks through and Progent as shipped 17; at `0d7ea07`, 27 and 18.
+On all 144 pairs, 100 and 42 then, 103 and 43 now.
+
+### Exploratory: what the stopped attacks cost the user
+
+Not part of the plan above. Computed after the results were read, by
+`scripts/explore_fair_test.py`, with the same majority and scoring, and no test
+applied.
+
+- 27 of the 42 within-policy pairs belong to the five user tasks whose reference
+  solution the generic policy refuses: 6 each for `user_task_0`, `user_task_5`
+  and `user_task_11`, 8 for `user_task_15` and 1 for `user_task_14`.
+- Of the 18 attacks only the generic policy stopped, 13 are in those tasks. The
+  user's task was completed in 4 of the 18 under the generic policy, and in 11
+  under Progent as shipped.
+- On the 15 within-policy pairs of the other user tasks, the task is completed in
+  1 under the generic policy, 5 under Progent as shipped and 9 under Auto-Deny.
+  Why it fails there has not been examined trace by trace.
+- Counting a pair only when the user's task was completed and the attack failed:
+  within policy, A 4, Progent as shipped 6, the generic policy 7 and Auto-Deny 12
+  of 42; on all pairs, 22, 59, 63 and 63 of 144.
+
+Within policy, then, the generic policy stops the attacks mostly together with
+the user's task.
+
 ## What is not measured
 
 - **Manual Approval as in Appendix D.** It needs a reviewer who recognises the

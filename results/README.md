@@ -172,6 +172,10 @@ the agent carries out the attacker's step and then finishes the task.
   Condition C cannot be re-scored for the banking defect below, because its logs
   do not keep call arguments; 4 of its 8 discordant pairs are on tasks the defect
   touches, two on task 0 and two on task 1
+- the generic policy against Progent as shipped, 18 attacks stopped and none let
+  through on the 42 within-policy pairs, p = 7.6 × 10⁻⁶: `runs-fair-test/`,
+  pre-registered in `docs/generic-policy.md`; the utility breakdown beside it is
+  exploratory (`scripts/explore_fair_test.py`)
 - the policy-model confound, 42.9% / 45.2% / 45.2%: `runs/`,
   `runs-strong-policy/` *(the broken arm, quoted only as the broken arm)* and
   `runs-strong-policy-fixed/`

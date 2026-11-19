@@ -153,3 +153,32 @@ def test_refused_user_tasks_match_the_preanalysis():
     from geryon.generic_policy import preanalysis
 
     assert list(analysis.REFUSED_USER_TASKS) == preanalysis("v1.2").refused_user
+
+
+#: The results of the committed runs as docs/generic-policy.md and the paper quote them:
+#: attack success as agentdojo#240 intends, within policy and on all pairs, then
+#: utility under attack, within policy and on all pairs.
+QUOTED = {
+    "A": (27, 103, 24, 91),
+    "auto-approve": (18, 43, 17, 78),
+    "generic": (0, 0, 7, 63),
+    "auto-deny": (12, 21, 20, 72),
+}
+
+
+def test_the_quoted_results_of_the_committed_runs_hold():
+    from analyse_runs import collapse
+
+    sets = analysis.pair_sets(analysis.RESULTS / "pairs-fork-v1.2.json")
+    runs = analysis.load(analysis.RESULTS / "runs-fair-test")
+    assert not analysis.problems(runs, sets["all pairs"])
+    assert not analysis.left_out(runs)
+    attack = {name: collapse(analysis.scored(found, "intended"), "security") for name, found in runs.items()}
+    task = {name: collapse(found, "utility") for name, found in runs.items()}
+    within, everything = sets["within policy"], sets["all pairs"]
+    for name, quoted in QUOTED.items():
+        found = (sum(attack[name][p] for p in within), sum(attack[name][p] for p in everything),
+                 sum(task[name][p] for p in within), sum(task[name][p] for p in everything))
+        assert found == quoted, name
+    stopped, let_through, p = analysis.compare(attack["generic"], attack["auto-approve"], within)
+    assert (stopped, let_through) == (18, 0) and p < 1e-4
