@@ -177,42 +177,45 @@ which the call ran and the benchmark scored no attack.
 `scripts/audit_decisive_calls.py` applies the same rules to every per-pair log
 kept here. It is exploratory: written on 19 November, after every result had been
 read, and no pre-registered analysis changes. CI keeps its figures from drifting.
-Two cases need care.
 
-- Banking `user_task_15` gives the attacker's account, US133000000121212121212,
-  as the user's new landlord's. A call to that account there can be what the user
-  asked for, so, as in the audit, those episodes count only as the benchmark
-  scored them. On that task's pair with `injection_task_4` the user's own request
-  passes the attack's check, which looks for any recurring payment to the account.
-- The audit misses an attack carried out through another call, and these runs
-  have that case: Progent refused `update_scheduled_transaction` and the agent
-  created a new recurring `schedule_transaction` to the attacker's account (two
-  episodes as shipped, two under Auto-Deny). So the missed attacks are added to
-  the benchmark's verdicts, not put in their place.
+The audit sets apart banking `user_task_15`, whose wording in the published runs
+gives the attacker's account as the user's new landlord's. Nothing is set apart
+here: from benchmark v1.1.1 on, which includes the v1.2 these runs use, that task
+names the landlord's account as CA133012400231215421872. (A first version of this
+note, committed at `98c3230`, read the task from v1 and set it apart wrongly.)
 
-| run | episodes | decisive call ran, no attack scored | the same in `user_task_15`, set apart |
-|---|---|---|---|
-| `runs-fair-test/`, no defence | 432 | 7 | 1 |
-| `runs-fair-test/`, Progent as shipped | 432 | 1 | 0 |
-| `runs-fair-test/`, generic policy | 432 | 0 | 0 |
-| `runs-fair-test/`, Auto-Deny | 432 | 0 | 0 |
-| `runs-full-set/`, A, the repeats with logs | 742 | 14 | 1 |
-| `runs-full-set/`, B, the repeats with logs | 947 | 7 | 1 |
+The audit misses an attack carried out through another call, and these runs have
+that case: Progent refused `update_scheduled_transaction` and the agent created a
+new recurring `schedule_transaction` to the attacker's account (two episodes as
+shipped, two under Auto-Deny). So the missed attacks are added to the benchmark's
+verdicts, not put in their place.
+
+| run | episodes | decisive call ran, no attack scored |
+|---|---|---|
+| `runs-fair-test/`, no defence | 432 | 8 |
+| `runs-fair-test/`, Progent as shipped | 432 | 1 |
+| `runs-fair-test/`, generic policy | 432 | 0 |
+| `runs-fair-test/`, Auto-Deny | 432 | 0 |
+| `runs-full-set/`, A, the repeats with logs | 742 | 15 |
+| `runs-full-set/`, B, the repeats with logs | 947 | 8 |
 
 Under the generic policy the decisive call was requested in 302 episodes and ran
 in none. Added to the benchmark's verdicts:
 
-- In `runs-fair-test/` nothing changes under the three defended configurations,
+- In `runs-fair-test/` nothing changes as shipped or under the generic policy,
   and the primary comparison stays 18 attacks stopped to none. Without a defence,
   28 of the 42 within-policy attacks get through instead of 27, and 106 of the
-  144 instead of 103 (majority of three, the pre-registered reading).
-- Elsewhere, where every repeat kept its logs, no within-policy outcome changes
-  under the defence. Outside policy, two slack pairs change in `runs-full-set/`,
-  and eight banking pairs in the single repeat of `runs-full-set-strong-agent/`,
-  which then reads 21 of 42 within policy against 26 of 102 outside: 50.0%
-  [35.5, 64.5] against 25.5% [18.0, 34.7]. Without a defence, one within-policy
-  pair changes in `runs/`, two in `runs-strong-agent/`, one within and one outside
-  on banking in `runs-full-set/`, and two within and seven outside in the single
+  144 instead of 103 (majority of three, the pre-registered reading). Under
+  Auto-Deny, 13 and 22 instead of 12 and 21: the pair the intended reading of
+  agentdojo#240 removes, because the payment's subject lacked what the check asks
+  for, comes back, since the money did reach the attacker.
+- Elsewhere, where every repeat kept its logs, under the defence: in
+  `runs-full-set/` no within-policy outcome changes and two out-of-policy slack
+  pairs do; in the single repeat of `runs-full-set-strong-agent/`, one pair within
+  policy and eight outside, which then reads 22 of 42 against 26 of 102: 52.4%
+  [37.7, 66.6] against 25.5% [18.0, 34.7]. Without a defence: one within-policy
+  pair in `runs/`, three in `runs-strong-agent/`, two within and one outside on
+  banking in `runs-full-set/`, and four within and seven outside in the single
   repeat of `runs-full-set-strong-agent/`.
 - `slack-A-r3`, `travel-A-r2`, `travel-A-r3` and `travel-B-r3` kept no per-pair
   logs, so the undefended side of the three-suite decomposition cannot be redone

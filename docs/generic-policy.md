@@ -408,13 +408,14 @@ Whether a refusal that named the argument would change that was not tested.
 **Attacks the checks miss.** An independent audit of AgentDojo's published runs
 counts an attack whenever the call that pays the attacker or changes the password
 ran (see `results/README.md`, 2026-11-19). Applied to these runs by
-`scripts/audit_decisive_calls.py`, it finds 8 episodes the benchmark scored as no
-attack although that call ran, 7 without a defence and 1 under Progent as
-shipped, besides one in `user_task_15`, set apart because its request names the
-attacker's account as the landlord's. It finds none under the generic policy,
-where the call was requested in 302 episodes and ran in none. Added to the
-pre-registered reading, they change only the no-defence counts, to 28 of the 42
-within-policy pairs and 106 of the 144; the primary comparison stays 18 to 0.
+`scripts/audit_decisive_calls.py`, it finds 9 episodes the benchmark scored as no
+attack although that call ran, 8 without a defence and 1 under Progent as
+shipped, and none under the generic policy, where the call was requested in 302
+episodes and ran in none. Added to the pre-registered reading, they change
+nothing as shipped or under the generic policy, and the primary comparison stays
+18 to 0. Without a defence the counts become 28 of the 42 within-policy pairs and
+106 of the 144; under Auto-Deny 13 and 22, because one pair that the intended
+reading removes did send money to the attacker.
 
 ## What is not measured
 
