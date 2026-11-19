@@ -32,6 +32,8 @@ jobs:
         run: PYTHONPATH=src python scripts/analyse_fair_test.py
       - name: the exploratory breakdown of those runs, as quoted in docs/generic-policy.md
         run: PYTHONPATH=src python scripts/explore_fair_test.py
+      - name: an independent audit's rules applied to every per-pair log, exploratory, as quoted in results/README.md
+        run: PYTHONPATH=src python scripts/audit_decisive_calls.py
       - name: tests that do not need the benchmark
         run: PYTHONPATH=src python -m pytest tests/test_corpus.py tests/test_stats.py
 
