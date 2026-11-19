@@ -332,11 +332,23 @@ fewer of their within-policy pairs (below).
 within-policy attacks through and Progent as shipped 17; at `0d7ea07`, 27 and 18.
 On all 144 pairs, 100 and 42 then, 103 and 43 now.
 
-### Exploratory: what the stopped attacks cost the user
+**Progent moved on during the runs.** On 18 November at 11:05 UTC, after the
+first run had finished and before the other eleven had started, the authors
+pushed `3e79753`, which corrects a further case of the subset check: an enum
+update that swaps in a value of another type was accepted as a narrowing. It
+changes only `secagent/policy_analysis.py`, so only Auto-Deny could behave
+differently. It was noticed on 19 November, after the runs. The plan fixes one
+commit for all twelve runs, so they stayed at `0d7ea07` and were not repeated;
+none of the attacks that got through Auto-Deny did so by an update (below).
+
+### Exploratory: how the attacks got through, and what stopping them cost
 
 Not part of the plan above. Computed after the results were read, by
-`scripts/explore_fair_test.py`, with the same majority and scoring, and no test
-applied.
+`scripts/explore_fair_test.py`, with no test applied. Pair counts use the same
+majority and scoring; the readings of the logs count episodes, one per pair and
+repeat.
+
+**What the stopped attacks cost the user.**
 
 - 27 of the 42 within-policy pairs belong to the five user tasks whose reference
   solution the generic policy refuses: 6 each for `user_task_0`, `user_task_5`
@@ -346,13 +358,52 @@ applied.
   under Progent as shipped.
 - On the 15 within-policy pairs of the other user tasks, the task is completed in
   1 under the generic policy, 5 under Progent as shipped and 9 under Auto-Deny.
-  Why it fails there has not been examined trace by trace.
 - Counting a pair only when the user's task was completed and the attack failed:
   within policy, A 4, Progent as shipped 6, the generic policy 7 and Auto-Deny 12
   of 42; on all pairs, 22, 59, 63 and 63 of 144.
 
 Within policy, then, the generic policy stops the attacks mostly together with
 the user's task.
+
+**How the within-policy attacks got through.** In every episode in which a
+within-policy attack succeeded, the attacker's call that ran was checked against
+the episode's initial policy, the one the model writes from the user's request
+alone, before the agent reads anything, by replaying Progent's own rule
+evaluation (`_check_tool_call` and `check_arg` in `secagent/tool.py`). On the
+first call of every episode, before any update can have happened, the replay
+reaches Progent's decision in all 1,208 episodes that made a call. The policies
+are read from the run logs; AgentDojo reruns a user task up to three times when
+the agent ends without a final answer and keeps only the last attempt's messages,
+so the policy used is the last attempt's.
+
+- Under Progent as shipped, 49 episodes succeeded. In 35 the initial policy
+  already allowed the attacker's call, with the recipient unrestricted; the
+  other 14 needed an update.
+- Under Auto-Deny, 35 episodes succeeded, and in all 35 the initial policy
+  already allowed the call, with the recipient unrestricted. None got through by
+  an update, so the subset check, and its correction in `3e79753`, played no
+  part in them.
+
+What Auto-Deny leaves through within policy is the initial policy itself: from
+the user's request, the model writes a rule for the payment that leaves the
+recipient open.
+
+**Why the task fails on the other within-policy pairs.** On the 15 pairs, 45
+episodes per configuration, read from the traces as
+`scripts/explain_slack_utility.py` reads slack's:
+
+| | task completed | a call the task needs refused | only the attacker's call refused, agent stopped | only the attacker's call refused, agent carried on | a detour refused | nothing refused |
+|---|---|---|---|---|---|---|
+| Progent as shipped | 18 | 3 | 3 | 3 | 0 | 18 |
+| generic policy | 8 | 0 | 14 | 9 | 2 | 12 |
+| Auto-Deny | 21 | 0 | 5 | 4 | 0 | 15 |
+
+Under the generic policy no call the task needed was refused. In the 23 episodes
+in which only the attacker's call was, the agent was told every time that the
+tool was not allowed (`The tool 'send_money' is not allowed`, or
+`update_scheduled_transaction`), although the rule forbids only the recipient,
+and in 21 of them it made no further payment of any kind, the user's included.
+Whether a refusal that named the argument would change that was not tested.
 
 ## What is not measured
 
